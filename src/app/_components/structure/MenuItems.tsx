@@ -50,11 +50,11 @@ export const sidebarMenuItems = [
     icon: <LiaAwardSolid size={22} />,
     label: <Link href="/badge-management">Badge Management</Link>,
   },
-  {
-    key: "/progress-tracing",
-    icon: <IoStatsChartOutline size={22} />,
-    label: <Link href="/progress-tracing">Progress Tracking </Link>,
-  },
+  // {
+  //   key: "/progress-tracing",
+  //   icon: <IoStatsChartOutline size={22} />,
+  //   label: <Link href="/progress-tracing">Progress Tracking </Link>,
+  // },
   {
     key: "/video-content",
     icon: <IoVideocamOutline size={22} />,
