@@ -1,11 +1,15 @@
 "use client";
 
+import { logout } from "@/redux/features/auth/authSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 const HeaderMenuDropdown = () => {
+  const dispatch = useAppDispatch();
+
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -55,7 +59,7 @@ const HeaderMenuDropdown = () => {
             <li>
               <button
                 onClick={() => {
-                  // dispatch(logout());
+                  dispatch(logout());
                   router.push("/login");
                 }}
                 style={{ color: "red" }}

@@ -1,14 +1,19 @@
 "use client";
 
+import { useSendOtpForgotPasswordMutation } from "@/redux/features/auth/authApi";
 import { useState } from "react";
 import { AuthForm } from "./AuthForm";
 
 export default function ForgotPass() {
+  const [forgotPassword] = useSendOtpForgotPasswordMutation();
+
   const [email, setEmail] = useState("");
 
-  const handleSubmit = (values: Record<string, string | boolean>) => {
+  const handleSubmit = async (values: Record<string, string | boolean>) => {
     console.log("Login Values:", values);
-    // Login logic here
+
+    const res = await forgotPassword({ email: values.email }).unwrap();
+    console.log("🚀 ~ handleSubmit ~ res:", res);
   };
 
   return (

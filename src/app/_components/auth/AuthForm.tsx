@@ -50,9 +50,10 @@ export const AuthForm = ({
     setFormValues({ ...formValues, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({ ...formValues, remember });
+    console.log("🚀 ~ handleSubmit ~ formValues:", formValues);
   };
 
   return (

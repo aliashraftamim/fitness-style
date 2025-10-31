@@ -1,3 +1,4 @@
+import ReduxProvider from "@/provider/reduxProvider";
 import "antd/dist/reset.css"; // Modern CSS reset for Ant Design v5
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
@@ -28,7 +29,7 @@ export default function MainLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <ReduxProvider>{children}</ReduxProvider>
       </body>
     </html>
   );
