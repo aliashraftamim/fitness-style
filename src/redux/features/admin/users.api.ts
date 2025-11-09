@@ -6,7 +6,7 @@ const userApi = baseApi.injectEndpoints({
       query: (params?: string) => {
         const queryString = params ? `?searchTerm=${params}` : "";
         return {
-          url: `/dashboard/user/all-users${queryString}`,
+          url: `/user/get-all-users${queryString}`,
           method: "GET",
         };
       },
@@ -15,8 +15,8 @@ const userApi = baseApi.injectEndpoints({
 
     blockUser: builder.mutation({
       query: (id) => ({
-        url: `/user/block-user/${id}`,
-        method: "DELETE",
+        url: `/user/update-user/${id}`,
+        method: "PUT",
       }),
       invalidatesTags: ["users"],
     }),

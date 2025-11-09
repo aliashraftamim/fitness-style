@@ -25,6 +25,7 @@ const Login = () => {
       email: values.email,
       password: values.password,
     }).unwrap();
+    console.log("🚀 ~ handleLogin ~ res:", res);
 
     if (res?.success) {
       dispatch(

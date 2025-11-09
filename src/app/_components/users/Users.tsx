@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetAllUsersQuery } from "@/redux/features/admin/users.api";
 import { EyeOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import { Avatar, Modal, Space, Table, Tooltip } from "antd";
@@ -47,6 +48,13 @@ const User: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<DataType | null>(null);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [blockUserData, setBlockUserData] = useState<DataType | null>(null);
+
+  const { data, error, isLoading } = useGetAllUsersQuery(undefined);
+  // Example: const { data, error, isLoading } = useGetAllUsersQuery("Ali");
+
+  if (isLoading) return <p>Loading...</p>;
+  if (error) return <p>Something went wrong!</p>;
+  console.log("🚀 ~ User ~ data:", data);
 
   const allUsers = generateFakeUsers(100);
 
