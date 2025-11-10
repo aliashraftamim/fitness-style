@@ -98,7 +98,7 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
           placeholder="Tier Name"
           value={formData.name}
           onChange={handleChange}
-          className="w-full border border-brand-primary rounded px-3 py-2 mb-2"
+          className="w-full border border-brand-primary rounded px-3 py-2 !mb-2"
         />
         <input
           type="text"
@@ -106,7 +106,7 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
           placeholder="Monthly Price"
           value={formData.monthlyPrice}
           onChange={handleChange}
-          className="w-full border border-brand-primary rounded px-3 py-2 mb-2"
+          className="w-full border border-brand-primary rounded px-3 py-2 !mb-2"
         />
         <input
           type="text"
@@ -114,7 +114,7 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
           placeholder="Promotional Price"
           value={formData.promotionalPrice}
           onChange={handleChange}
-          className="w-full border border-brand-primary rounded px-3 py-2 mb-2"
+          className="w-full border border-brand-primary rounded px-3 py-2 !mb-2"
         />
         <input
           type="text"
@@ -122,7 +122,7 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
           placeholder="Discount Label"
           value={formData.discountLabel}
           onChange={handleChange}
-          className="w-full border border-brand-primary rounded px-3 py-2 mb-2"
+          className="w-full border border-brand-primary rounded px-3 py-2 !mb-2"
         />
         <textarea
           name="description"
@@ -146,7 +146,7 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={addFeature}
-              className="bg-green-500 text-white px-3 rounded"
+              className="bg-green-500 !text-white px-3 rounded"
             >
               Add
             </button>
@@ -181,7 +181,7 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
             <button
               type="button"
               onClick={addCategory}
-              className="bg-blue-500 text-white px-3 rounded"
+              className="bg-blue-500 !text-white px-3 rounded"
             >
               Add
             </button>
@@ -208,13 +208,13 @@ export default function AddTiersForm({ onClose }: { onClose: () => void }) {
           type="file"
           accept="image/*"
           onChange={handleFileChange}
-          className="w-full border border-brand-primary rounded px-3 py-2 mb-2 cursor-pointer"
+          className="w-full border border-brand-primary rounded px-3 py-2 !mb-2 cursor-pointer"
         />
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-brand-primary hover:bg-green-900 text-white py-3 rounded"
+          className="w-full bg-brand-primary hover:bg-green-900 !text-white py-3 rounded"
         >
           {isLoading ? "Adding..." : "Add Tier"}
         </button>

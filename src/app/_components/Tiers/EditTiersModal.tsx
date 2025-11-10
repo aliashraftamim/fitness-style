@@ -129,7 +129,7 @@ export default function EditTiersForm({
           placeholder="Promotional Price"
           value={formData.promotionalPrice}
           onChange={handleChange}
-          className="w-full border !border-brand-primary rounded px-3 py-2 mb-2 focus:outline-none"
+          className="w-full border !border-brand-primary rounded px-3 py-2 !mb-2 focus:outline-none"
         />
         <input
           type="text"
@@ -137,7 +137,7 @@ export default function EditTiersForm({
           placeholder="Discount Label"
           value={formData.discountLabel}
           onChange={handleChange}
-          className="w-full border !border-brand-primary rounded px-3 py-2 mb-2 focus:outline-none"
+          className="w-full border !border-brand-primary rounded px-3 py-2 !mb-2 focus:outline-none"
         />
 
         {/* Description */}
@@ -146,7 +146,7 @@ export default function EditTiersForm({
           placeholder="Description"
           value={formData.description}
           onChange={handleChange}
-          className="w-full border !border-brand-primary rounded px-3 py-2 mb-2 resize-none h-20 focus:outline-none"
+          className="w-full border !border-brand-primary rounded px-3 py-2 !mb-2 resize-none h-20 focus:outline-none"
         />
 
         {/* Features */}
@@ -163,7 +163,7 @@ export default function EditTiersForm({
             <button
               type="button"
               onClick={addFeature}
-              className="bg-green-500 text-white px-3 rounded"
+              className="bg-green-500 !text-white px-3 rounded"
             >
               Add
             </button>
@@ -198,7 +198,7 @@ export default function EditTiersForm({
             <button
               type="button"
               onClick={addCategory}
-              className="bg-blue-500 text-white px-3 rounded"
+              className="bg-blue-500 !text-white px-3 rounded"
             >
               Add
             </button>
@@ -225,7 +225,7 @@ export default function EditTiersForm({
           type="file"
           accept="image/*"
           onChange={handleFileChange}
-          className="w-full border !border-brand-primary rounded px-3 py-2 mb-2 cursor-pointer"
+          className="w-full border !border-brand-primary rounded px-3 py-2 !mb-2 cursor-pointer"
         />
 
         {/* Visibility */}
