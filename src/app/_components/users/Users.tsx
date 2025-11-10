@@ -1,64 +1,42 @@
 "use client";
 
-import { useGetAllUsersQuery } from "@/redux/features/admin/users.api";
+import {
+  useBlockUserMutation,
+  useGetAllUsersQuery,
+  useUnblockUserMutation,
+} from "@/redux/features/admin/users.api";
 import { EyeOutlined } from "@ant-design/icons";
-import type { TableColumnsType } from "antd";
-import { Avatar, Modal, Space, Table, Tooltip } from "antd";
+import type { TableColumnsType, TablePaginationConfig } from "antd";
+import { Avatar, Modal, Space, Table, Tag, Tooltip } from "antd";
 import React, { useState } from "react";
 import { GoBlocked } from "react-icons/go";
-
-interface DataType {
-  key: React.Key;
-  serial: string;
-  name: string;
-  email: string;
-  phoneNumber: string;
-  tiers: string;
-  address: string;
-  createdAt: string;
-  avatar: string;
-  action: React.ReactNode;
-}
-
-const generateFakeUsers = (count: number): DataType[] => {
-  const users: DataType[] = [];
-  for (let i = 0; i < count; i++) {
-    const id = `${i + 1}`;
-    users.push({
-      key: id,
-      serial: `#${(i + 1).toString().padStart(2, "0")}`,
-      name: `User ${i + 1}`,
-      email: `user${i + 1}@example.com`,
-      phoneNumber: `017000000${(i % 10) + 1}`,
-      tiers: i % 2 === 0 ? "Awaken" : "Balance",
-      address: `House-${i + 1}, Street-${(i % 10) + 1}, City`,
-      createdAt: new Date(
-        Date.now() - Math.floor(Math.random() * 10000000000)
-      ).toISOString(),
-      avatar:
-        "https://res.cloudinary.com/dhp4mffqp/image/upload/v1740493576/man-2_scexda.png",
-      action: <></>, // placeholder for now
-    });
-  }
-  return users;
-};
+import { MdLockOpen } from "react-icons/md";
+import { toast } from "sonner";
+import { IUser, USER_STATUS } from "./user.interface";
 
 const User: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<DataType | null>(null);
+  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
-  const [blockUserData, setBlockUserData] = useState<DataType | null>(null);
+  const [unblockModalVisible, setUnblockModalVisible] = useState(false);
+  const [actionUser, setActionUser] = useState<IUser | null>(null);
+  const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation();
+  const [unblockUser, { isLoading: isUnblocking }] = useUnblockUserMutation();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  const { data, error, isLoading } = useGetAllUsersQuery(undefined);
-  // Example: const { data, error, isLoading } = useGetAllUsersQuery("Ali");
+  const { data, error, isLoading } = useGetAllUsersQuery({
+    page: currentPage,
+    limit: pageSize,
+  });
 
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Something went wrong!</p>;
-  console.log("🚀 ~ User ~ data:", data);
 
-  const allUsers = generateFakeUsers(100);
+  const meta = data?.meta;
+  const allUsers = data.data;
 
-  const handleViewUser = (user: DataType) => {
+  const handleViewUser = (user: IUser) => {
     setSelectedUser(user);
     setIsModalVisible(true);
   };
@@ -68,12 +46,48 @@ const User: React.FC = () => {
     setSelectedUser(null);
   };
 
-  const handleBlockUser = (user: DataType) => {
-    setBlockUserData(user);
+  const handleBlockUser = (user: IUser) => {
+    setActionUser(user);
     setBlockModalVisible(true);
   };
 
-  const columns: TableColumnsType<DataType> = [
+  const handleUnblockUser = (user: IUser) => {
+    setActionUser(user);
+    setUnblockModalVisible(true);
+  };
+
+  const confirmBlockUser = async () => {
+    if (actionUser) {
+      try {
+        await blockUser(actionUser._id).unwrap();
+        toast.success("User blocked successfully");
+        setBlockModalVisible(false);
+        setActionUser(null);
+      } catch (error) {
+        toast.error("Failed to block user");
+      }
+    }
+  };
+
+  const confirmUnblockUser = async () => {
+    if (actionUser) {
+      try {
+        await unblockUser(actionUser._id).unwrap();
+        toast.success("User unblocked successfully");
+        setUnblockModalVisible(false);
+        setActionUser(null);
+      } catch (error) {
+        toast.error("Failed to unblock user");
+      }
+    }
+  };
+
+  const handleTableChange = (pagination: TablePaginationConfig) => {
+    setCurrentPage(pagination.current || 1);
+    setPageSize(pagination.pageSize || 10);
+  };
+
+  const columns: TableColumnsType<IUser> = [
     {
       title: "Serial",
       dataIndex: "serial",
@@ -88,7 +102,10 @@ const User: React.FC = () => {
       align: "start",
       render: (text, record) => (
         <Space className="justify-start flex w-full">
-          <Avatar src={record.avatar || "/default-avatar.png"} size={32} />
+          <Avatar
+            src={record.profileImage || "/default-avatar.png"}
+            size={32}
+          />
           {text}
         </Space>
       ),
@@ -101,20 +118,39 @@ const User: React.FC = () => {
     },
     {
       title: "Phone Number",
-      dataIndex: "phoneNumber",
+      dataIndex: "contactNumber",
       width: "20%",
       align: "start",
     },
     {
       title: "Tiers",
-      dataIndex: "tiers",
+      dataIndex: "payment",
       width: "10%",
       align: "start",
+      render: (payment) => (
+        <span className="pl-4">
+          {payment?.tiersId?.name || payment?.tiersName || "N/A"}
+        </span>
+      ),
+    },
+    {
+      title: "Status",
+      dataIndex: "status",
+      width: "10%",
+      align: "center",
+      render: (status: keyof typeof USER_STATUS) => {
+        console.log("🚀 ~ User ~ status:", status);
+        return (
+          <Tag color={status === USER_STATUS.BLOCKED ? "red" : "green"}>
+            {status === USER_STATUS.BLOCKED ? "Blocked" : "Active"}
+          </Tag>
+        );
+      },
     },
     {
       title: "Date",
       dataIndex: "createdAt",
-      width: "20%",
+      width: "15%",
       align: "center",
       render: (date: string) => new Date(date).toLocaleString(),
     },
@@ -131,13 +167,23 @@ const User: React.FC = () => {
               className="text-lg cursor-pointer"
             />
           </Tooltip>
-          <Tooltip title="Block User">
-            <GoBlocked
-              color="red"
-              className="text-lg cursor-pointer"
-              onClick={() => handleBlockUser(record)}
-            />
-          </Tooltip>
+          {record.status === USER_STATUS.BLOCKED ? (
+            <Tooltip title="Unblock User">
+              <MdLockOpen
+                color="green"
+                className="text-lg cursor-pointer"
+                onClick={() => handleUnblockUser(record)}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip title="Block User">
+              <GoBlocked
+                color="red"
+                className="text-lg cursor-pointer"
+                onClick={() => handleBlockUser(record)}
+              />
+            </Tooltip>
+          )}
         </div>
       ),
     },
@@ -159,15 +205,34 @@ const User: React.FC = () => {
   return (
     <div className="py-5 pt-10">
       <div className="py-[10px] rounded-[20px] bg-[#F5F5F5] overflow-hidden">
-        <Table<DataType>
+        <Table<IUser>
           columns={columns}
           dataSource={allUsers}
           components={components}
-          pagination={{ pageSize: 10 }}
           style={{ borderRadius: "20px", overflow: "hidden" }}
+          loading={isLoading}
+          onChange={handleTableChange}
+          pagination={{
+            current: currentPage,
+            pageSize: pageSize,
+            total: meta?.total || 0,
+            showSizeChanger: true,
+            showTotal: (total, range) =>
+              `${range[0]}-${range[1]} of ${total} users`,
+            pageSizeOptions: ["5", "10", "20", "50", "100"],
+            position: ["bottomCenter"],
+            className: "mt-4",
+            showQuickJumper: true,
+            locale: {
+              items_per_page: "/ page",
+              jump_to: "Go to",
+              page: "",
+            },
+          }}
         />
       </div>
 
+      {/* View User Modal */}
       <Modal
         open={isModalVisible}
         onCancel={handleCancel}
@@ -184,11 +249,24 @@ const User: React.FC = () => {
                 label: "Date",
                 value: new Date(selectedUser.createdAt).toLocaleString(),
               },
-              { label: "User Name", value: selectedUser.name },
+              { label: "User Name", value: selectedUser.firstName },
               { label: "Email", value: selectedUser.email },
-              { label: "Phone Number", value: selectedUser.phoneNumber },
-              { label: "Tiers", value: selectedUser.tiers },
-              { label: "Address", value: selectedUser.address },
+              { label: "Phone Number", value: selectedUser.contactNumber },
+              {
+                label: "Tiers",
+                value:
+                  selectedUser.payment?.tiersId?.name ??
+                  selectedUser.payment?.tiersName ??
+                  "N/A",
+              },
+              { label: "Address", value: selectedUser.locationName || "N/A" },
+              {
+                label: "Status",
+                value:
+                  selectedUser.status === USER_STATUS.BLOCKED
+                    ? "Blocked"
+                    : "Active",
+              },
             ].map((item, idx) => (
               <div key={idx} className="flex justify-between border-b py-3">
                 <span className="font-semibold">{item.label}:</span>
@@ -199,26 +277,48 @@ const User: React.FC = () => {
         )}
       </Modal>
 
-      {/* Custom Block Confirmation Modal */}
+      {/* Block User Modal */}
       <Modal
         open={blockModalVisible}
-        onCancel={() => setBlockModalVisible(false)}
-        onOk={() => {
-          if (blockUserData) {
-            console.log("Blocked user:", blockUserData);
-          }
+        onCancel={() => {
           setBlockModalVisible(false);
+          setActionUser(null);
         }}
+        onOk={confirmBlockUser}
         okText="Block"
         cancelText="Cancel"
-        okButtonProps={{ danger: true }}
+        okButtonProps={{ danger: true, loading: isBlocking }}
         centered
         width={300}
         closable={false}
       >
-        {blockUserData && (
-          <div className="">
-            <p>Are you sure you want to block</p>
+        {actionUser && (
+          <div className="text-center">
+            <p className="mb-2">Are you sure you want to block</p>
+            <p className="font-semibold">{actionUser.firstName}?</p>
+          </div>
+        )}
+      </Modal>
+
+      {/* Unblock User Modal */}
+      <Modal
+        open={unblockModalVisible}
+        onCancel={() => {
+          setUnblockModalVisible(false);
+          setActionUser(null);
+        }}
+        onOk={confirmUnblockUser}
+        okText="Unblock"
+        cancelText="Cancel"
+        okButtonProps={{ loading: isUnblocking }}
+        centered
+        width={300}
+        closable={false}
+      >
+        {actionUser && (
+          <div className="text-center">
+            <p className="mb-2">Are you sure you want to unblock</p>
+            <p className="font-semibold">{actionUser.firstName}?</p>
           </div>
         )}
       </Modal>

@@ -3,10 +3,10 @@ import { baseApi } from "@/redux/api/baseApi";
 const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getAllUsers: builder.query({
-      query: (params?: string) => {
-        const queryString = params ? `?searchTerm=${params}` : "";
+      query: (params: Record<string, any> = {}) => {
+        const queryString = new URLSearchParams(params).toString();
         return {
-          url: `/user/get-all-users${queryString}`,
+          url: `/user/get-all-users${queryString ? `?${queryString}` : ""}`,
           method: "GET",
         };
       },
@@ -15,14 +15,28 @@ const userApi = baseApi.injectEndpoints({
 
     blockUser: builder.mutation({
       query: (id) => ({
-        url: `/user/update-user/${id}`,
-        method: "PUT",
+        url: `/user/block-unblock-user/${id}`,
+        method: "PATCH",
+        body: { isBlocked: true },
+      }),
+      invalidatesTags: ["users"],
+    }),
+
+    unblockUser: builder.mutation({
+      query: (id) => ({
+        url: `/user/block-unblock-user/${id}`,
+        method: "PATCH",
+        body: { isBlocked: false },
       }),
       invalidatesTags: ["users"],
     }),
   }),
 });
 
-export const { useGetAllUsersQuery, useBlockUserMutation } = userApi;
+export const {
+  useGetAllUsersQuery,
+  useBlockUserMutation,
+  useUnblockUserMutation,
+} = userApi;
 
 export default userApi;
