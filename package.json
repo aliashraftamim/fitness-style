@@ -10,6 +10,7 @@
     "vercel-build": "corepack enable && yarn install && yarn build"
   },
   "dependencies": {
+    "@ant-design/icons": "5.x",
     "@ant-design/v5-patch-for-react-19": "^1.0.3",
     "@headlessui/react": "^2.2.6",
     "@reduxjs/toolkit": "^2.8.2",
