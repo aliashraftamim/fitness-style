@@ -30,14 +30,25 @@ const subscriptionApi = baseApi.injectEndpoints({
       invalidatesTags: ["subscriptions"],
     }),
 
-    updateAndDelete: builder.mutation({
+    updateSubscription: builder.mutation({
       query: (body: any) => {
         const { id, ...data } = body;
 
         return {
-          url: `/subscription/${id}`,
+          url: `/subscription/update/${id}`,
           method: "PUT",
-          body: data.body,
+          body: body.data,
+        };
+      },
+      invalidatesTags: ["subscriptions"],
+    }),
+
+    deleteSubscription: builder.mutation({
+      query: (id: string) => {
+        return {
+          url: `/subscription/update/${id}`,
+          method: "PUT",
+          body: { isDeleted: true },
         };
       },
       invalidatesTags: ["subscriptions"],
@@ -62,7 +73,8 @@ const subscriptionApi = baseApi.injectEndpoints({
 export const {
   useGetAllSubscriptionQuery,
   useGetSingleSubscriptionQuery,
-  useUpdateAndDeleteMutation,
+  useUpdateSubscriptionMutation,
+  useDeleteSubscriptionMutation,
   useMakeAUserPremiumMutation,
   useCreateSubscriptionMutation,
 } = subscriptionApi;

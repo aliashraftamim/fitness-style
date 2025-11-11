@@ -1,7 +1,9 @@
+import { ITier } from "../Tiers/tiers.interface";
+
 export interface ISubscription {
   _id?: string; // MongoDB document ID
   title: string;
-  tires: string[]; // Array of Tier IDs
+  tires: string[] | ITier[] | any; // Array of Tier IDs
   description: string;
   pricePerMonth: number;
   discountPricePerMonth?: number | null;
