@@ -1,74 +1,102 @@
 "use client";
 
+import {
+  useBlockBadgeMutation,
+  useGetBadgesQuery,
+  useUnblockBadgeMutation,
+} from "@/redux/features/admin/badge.api";
 import { EyeOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
-import { Avatar, Button, Modal, Space, Table, Tooltip } from "antd";
-import React, { useMemo, useState } from "react";
+import { Avatar, Button, Form, Space, Table, Tooltip } from "antd";
+import React, { useState } from "react";
 import { GoBlocked } from "react-icons/go";
 import { IoMdAddCircleOutline } from "react-icons/io";
+import { toast } from "sonner";
+import AddBadgeModal from "./AddBadgeModal";
 
 interface DataType {
   key: React.Key;
   serial: string;
   name: string;
   tiers: string;
-  address: string;
+  tiersId: string;
+  numberOfContent: number;
   createdAt: string;
   status: string;
   avatar: string;
   action: React.ReactNode;
 }
 
-const generateFakeBadges = (count: number): DataType[] => {
-  const Badges: DataType[] = [];
-  for (let i = 0; i < count; i++) {
-    const id = `${i + 1}`;
-    Badges.push({
-      key: id,
-      serial: `#${(i + 1).toString().padStart(2, "0")}`,
-      name: `Badge ${i + 1}`,
-      tiers: i % 2 === 0 ? "Awaken" : "Balance",
-      address: `House-${i + 1}, Street-${(i % 10) + 1}, City`,
-      status: i % 2 === 0 ? "Active" : "Inactive",
-      createdAt: new Date(
-        Date.now() - Math.floor(Math.random() * 10000000000)
-      ).toISOString(),
-      avatar:
-        "https://res.cloudinary.com/dhp4mffqp/image/upload/v1740493576/man-2_scexda.png",
-      action: <></>,
-    });
-  }
-  return Badges;
-};
-
 const BadgeManagement: React.FC = () => {
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+
+  // ✅ Query badges from API with search + date filter
+  const { data: response, isLoading } = useGetBadgesQuery({
+    page,
+    limit,
+    searchTerm,
+    createdAt: selectedDate,
+  });
+
+  const [blockBadge] = useBlockBadgeMutation();
+  const [unblockBadge] = useUnblockBadgeMutation();
+
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<DataType | null>(null);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [blockBadgeData, setBlockBadgeData] = useState<DataType | null>(null);
   const [addBadgeModalVisible, setAddBadgeModalVisible] = useState(false);
+  const [form] = Form.useForm();
 
-  const allBadges = useMemo(() => generateFakeBadges(100), []);
-
-  const handleViewBadge = (Badge: DataType) => {
-    setSelectedBadge(Badge);
+  const handleViewBadge = (badge: DataType) => {
+    setSelectedBadge(badge);
     setIsModalVisible(true);
   };
 
-  const handleCancel = () => {
-    setIsModalVisible(false);
-    setSelectedBadge(null);
+  const handleBlockBadge = async (badge: DataType) => {
+    try {
+      await blockBadge(badge.key).unwrap();
+      toast.success("Badge blocked successfully!");
+      // refetch or update table
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleBlockBadge = (Badge: DataType) => {
-    setBlockBadgeData(Badge);
-    setBlockModalVisible(true);
+  const handleUnblockBadge = async (badge: DataType) => {
+    try {
+      await unblockBadge(badge.key).unwrap();
+      toast.success("Badge unblocked successfully!");
+      // refetch or update table
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const tiersFilters = [
-    { text: "Awaken", value: "Awaken" },
-    { text: "Balance", value: "Balance" },
-  ];
+  const badges = response?.data || [];
+
+  const dataSource: DataType[] = badges.map((badge: any, index: number) => ({
+    key: badge._id,
+    serial: `#${((page - 1) * limit + index + 1).toString().padStart(2, "0")}`,
+    name: badge.name,
+    tiers: badge.tiersId || "N/A",
+    tiersId: badge.tiersId,
+    numberOfContent: badge.numberOfContent || 0,
+    createdAt: badge.createdAt,
+    status: badge.status === "ACTIVE" ? "Active" : "Inactive",
+    avatar: badge.badgeIcon || "/default-avatar.png",
+    action: null,
+  }));
+
+  const tiersFilters = Array.from(new Set(dataSource.map((i) => i.tiers))).map(
+    (tier) => ({
+      text: tier,
+      value: tier,
+    })
+  );
 
   const statusFilters = [
     { text: "Active", value: "Active" },
@@ -90,7 +118,7 @@ const BadgeManagement: React.FC = () => {
       align: "start",
       render: (text, record) => (
         <Space className="justify-start flex w-full">
-          <Avatar src={record.avatar || "/default-avatar.png"} size={32} />
+          <Avatar src={record.avatar} size={32} />
           {text}
         </Space>
       ),
@@ -98,7 +126,7 @@ const BadgeManagement: React.FC = () => {
     {
       title: "Tiers",
       dataIndex: "tiers",
-      width: "20%",
+      width: "15%",
       align: "start",
       filters: tiersFilters,
       onFilter: (value, record) => record.tiers === value,
@@ -106,20 +134,34 @@ const BadgeManagement: React.FC = () => {
       filterMultiple: false,
     },
     {
+      title: "Content Count",
+      dataIndex: "numberOfContent",
+      width: "15%",
+      align: "center",
+    },
+    {
       title: "Status",
       dataIndex: "status",
-      width: "20%",
-      align: "start",
+      width: "15%",
+      align: "center",
       filters: statusFilters,
       onFilter: (value, record) => record.status === value,
-      filterSearch: true,
-      filterMultiple: false,
+      render: (status: string) => (
+        <span
+          className={`px-3 py-1 rounded-full text-sm font-semibold ${
+            status === "Active"
+              ? "text-green-600 bg-green-100"
+              : "text-red-600 bg-red-100"
+          }`}
+        >
+          {status}
+        </span>
+      ),
     },
-
     {
       title: "Created Date",
       dataIndex: "createdAt",
-      width: "20%",
+      width: "15%",
       align: "center",
       render: (date: string) => new Date(date).toLocaleString(),
     },
@@ -136,13 +178,23 @@ const BadgeManagement: React.FC = () => {
               className="text-lg cursor-pointer"
             />
           </Tooltip>
-          <Tooltip title="Block Badge">
-            <GoBlocked
-              color="red"
-              className="text-lg cursor-pointer"
-              onClick={() => handleBlockBadge(record)}
-            />
-          </Tooltip>
+          {record.status === "Active" ? (
+            <Tooltip title="Block Badge">
+              <GoBlocked
+                color="red"
+                className="text-lg cursor-pointer"
+                onClick={() => handleBlockBadge(record)}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip title="Unblock Badge">
+              <GoBlocked
+                color="green"
+                className="text-lg cursor-pointer"
+                onClick={() => handleUnblockBadge(record)}
+              />
+            </Tooltip>
+          )}
         </div>
       ),
     },
@@ -153,7 +205,7 @@ const BadgeManagement: React.FC = () => {
       cell: (props: any) => (
         <th
           {...props}
-          className="bg-red-600 text-white text-center font-semibold py-3"
+          className="bg-gray-100 text-gray-700 text-center font-semibold py-3"
         >
           {props.children}
         </th>
@@ -162,10 +214,11 @@ const BadgeManagement: React.FC = () => {
   };
 
   return (
-    <div className="py-5 pt-10">
-      <div>
+    <div className="py-5 pt-10 max-w-[1200px] mx-auto">
+      {/* Add Button */}
+      <div className="mb-4">
         <Button
-          className="w-full !py-7 !text-brand-primary !border !border-brand-primary !text-lg"
+          className="w-full !py-5 !text-brand-primary !border !border-brand-primary !text-lg flex items-center justify-center gap-2"
           size="large"
           icon={<IoMdAddCircleOutline size={22} />}
           onClick={() => setAddBadgeModalVisible(true)}
@@ -173,154 +226,49 @@ const BadgeManagement: React.FC = () => {
           Add New Badge
         </Button>
       </div>
-
-      <Modal
-        open={addBadgeModalVisible}
-        onCancel={() => setAddBadgeModalVisible(false)}
-        footer={null}
-        centered
-        width={400}
-        className="rounded-xl"
-      >
-        <h2 className="text-center text-lg font-semibold mb-6">
-          ← Badges Management
-        </h2>
-
-        <form className="space-y-5">
-          {/* Upload Image */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">
-              Upload Image
-            </label>
-            <input
-              type="file"
-              className="block w-full border border-gray-300  px-4 py-2 rounded-lg text-sm text-gray-500
-        file:mr-4 file:py-2 file:px-4
-        file:rounded-lg file:border-0
-        file:text-sm file:font-semibold
-        file:bg-pink-50 file:text-pink-700
-        hover:file:bg-pink-100"
-            />
-          </div>
-
-          {/* Badge Name */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Badge Name</label>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Enter Badge Name..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-brand-primary"
-              />
-            </div>
-          </div>
-
-          {/* Tier Name */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Tier Name</label>
-            <select className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary">
-              <option value="Awaken">Awaken</option>
-              <option value="Balance">Balance</option>
-            </select>
-          </div>
-
-          {/* Status */}
-          <div>
-            <label className="block mb-1 text-sm font-medium">Status</label>
-            <select className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-brand-primary">
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-            </select>
-          </div>
-
-          {/* Save Button */}
-          <div>
-            <button
-              type="submit"
-              className="w-full bg-brand-primary !text-white font-semibold py-3 rounded-lg hover:bg-green-800 transition"
-            >
-              Save
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Search and Filter Row */}
-      <div className="flex items-center justify-between my-4">
+      {/* Search & Date Filter */}
+      <div className="flex items-center justify-between my-4 gap-4">
         <input
           type="text"
           placeholder="Search Badge..."
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setPage(1);
+          }}
           className="border border-gray-300 rounded-lg px-4 py-3 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
         <input
           type="date"
-          className="border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-400 w-[300px]"
+          value={selectedDate}
+          onChange={(e) => {
+            setSelectedDate(e.target.value);
+            setPage(1);
+          }}
+          className="border border-gray-300 rounded-lg px-4 py-3 w-[300px] focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
-
+      {/* Table */}
       <div className="py-[10px] rounded-[20px] bg-[#F5F5F5] overflow-hidden">
         <Table<DataType>
           columns={columns}
-          dataSource={allBadges}
+          dataSource={dataSource}
           components={components}
-          pagination={{ pageSize: 10 }}
+          pagination={{
+            current: page,
+            pageSize: limit,
+            total: response?.meta || 0,
+            onChange: (newPage) => setPage(newPage),
+            showSizeChanger: false,
+          }}
+          loading={isLoading}
           style={{ borderRadius: "20px", overflow: "hidden" }}
         />
       </div>
-
-      <Modal
-        open={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-        width={440}
-        className="mt-32 BadgeInfoModal"
-        centered
-      >
-        {selectedBadge && (
-          <div className="space-y-2">
-            <h4 className="text-center text-[16px] mb-5">Badge Details</h4>
-            {[
-              {
-                label: "Date",
-                value: new Date(selectedBadge.createdAt).toLocaleString(),
-              },
-              { label: "Badge Name", value: selectedBadge.name },
-              { label: "Tiers", value: selectedBadge.tiers },
-              { label: "Address", value: selectedBadge.address },
-            ].map((item, idx) => (
-              <div key={idx} className="flex justify-between border-b py-3">
-                <span className="font-semibold">{item.label}:</span>
-                <span>{item.value}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Modal>
-
-      <Modal
-        open={blockModalVisible}
-        onCancel={() => setBlockModalVisible(false)}
-        onOk={() => {
-          if (blockBadgeData) {
-            console.log("Blocked Badge:", blockBadgeData);
-          }
-          setBlockModalVisible(false);
-        }}
-        okText="Block"
-        cancelText="Cancel"
-        okButtonProps={{ danger: true }}
-        centered
-        width={300}
-        closable={false}
-      >
-        {blockBadgeData && (
-          <div>
-            <p>
-              Are you sure you want to block <b>{blockBadgeData.name}</b>?
-            </p>
-          </div>
-        )}
-      </Modal>
+      <AddBadgeModal
+        isOpen={addBadgeModalVisible}
+        onClose={() => setAddBadgeModalVisible(false)}
+      />
     </div>
   );
 };

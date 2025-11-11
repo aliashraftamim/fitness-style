@@ -1,3 +1,5 @@
+"use client";
+
 import { baseApi } from "@/redux/api/baseApi";
 
 const userApi = baseApi.injectEndpoints({
@@ -7,6 +9,17 @@ const userApi = baseApi.injectEndpoints({
         const queryString = new URLSearchParams(params).toString();
         return {
           url: `/user/get-all-users${queryString ? `?${queryString}` : ""}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["users"],
+    }),
+
+    getPaidUsers: builder.query({
+      query: (params: Record<string, any> = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return {
+          url: `/user/paid-users${queryString ? `?${queryString}` : ""}`,
           method: "GET",
         };
       },
@@ -35,6 +48,7 @@ const userApi = baseApi.injectEndpoints({
 
 export const {
   useGetAllUsersQuery,
+  useGetPaidUsersQuery,
   useBlockUserMutation,
   useUnblockUserMutation,
 } = userApi;

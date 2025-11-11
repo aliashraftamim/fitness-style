@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetPaidUsersQuery } from "@/redux/features/admin/users.api";
 import type { TableColumnsType } from "antd";
 import { Avatar, Modal, Space, Table } from "antd";
 import { useState } from "react";
@@ -24,6 +25,11 @@ type DataType = {
 };
 
 const PremiumUsers = () => {
+  const [page, setPage] = useState(1);
+  const [limit] = useState(10);
+
+  const { data: response } = useGetPaidUsersQuery({ page, limit });
+
   const defaultAvatar =
     "https://res.cloudinary.com/dhp4mffqp/image/upload/v1740493576/man-2_scexda.png";
 
@@ -31,17 +37,17 @@ const PremiumUsers = () => {
     {
       icon: <FaHandHoldingDollar size={28} />,
       label: "Total Subscriber",
-      value: "124",
+      value: response?.meta?.statistics?.totalPaidUsers || 0,
     },
     {
       icon: <RiHeart2Line size={28} />,
       label: "Single- Tier",
-      value: "92",
+      value: response?.meta?.statistics?.singleTierUsers || 0,
     },
     {
       icon: <BsHeartHalf size={28} />,
       label: "All Tiers",
-      value: "687",
+      value: response?.meta?.statistics?.allTiersUsers || 0,
     },
   ];
 
@@ -51,24 +57,7 @@ const PremiumUsers = () => {
   const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [blockUserData, setBlockUserData] = useState<DataType | null>(null);
 
-  // ✅ Dummy Users
-  const users = Array.from({ length: 20 }).map((_, i) => {
-    const num = i + 1;
-    return {
-      _id: `${num}`,
-      name: `User ${num}`,
-      email: `user${num}@example.com`,
-      phoneNumber: `017000000${num.toString().padStart(2, "0")}`,
-      tiers: i % 2 === 0 ? "Awaken" : "Balance",
-      amount: `$${(num * 10).toFixed(2)}`,
-      address: `${num} Road, City ${num}`,
-      createdAt: new Date(
-        Date.now() - Math.floor(Math.random() * 10000000000)
-      ).toISOString(),
-      profileImage: "",
-      status: i % 2 === 0 ? "Active" : "Inactive",
-    };
-  });
+  const users = response?.data || [];
 
   const handleViewUser = (user: DataType) => {
     setSelectedUser(user);
@@ -85,19 +74,32 @@ const PremiumUsers = () => {
     setBlockModalVisible(true);
   };
 
-  const dataSource: DataType[] = users.map((user, index) => ({
-    key: user._id,
-    serial: `#${(index + 1).toString().padStart(2, "0")}`,
-    name: user.name,
-    email: user.email,
-    phoneNumber: user.phoneNumber,
-    tiers: user.tiers,
-    amount: user.amount,
-    address: user.address,
-    createdAt: user.createdAt,
-    avatar: user.profileImage || defaultAvatar,
-    status: user.status,
-  }));
+  const dataSource: DataType[] = users.map((user: any, index: number) => {
+    const fullName = `${user.firstName || ""} ${user.lastName || ""}`.trim();
+    const tiersName = user.payment?.isAllTiers
+      ? user.payment?.tiersName || "All Tiers"
+      : user.payment?.tiersId?.name || "N/A";
+    const amount = user.payment?.amount
+      ? `$${user.payment.amount.toFixed(2)}`
+      : "$0.00";
+    const status = user.payment?.isExpired ? "Expired" : "Active";
+
+    return {
+      key: user._id,
+      serial: `#${((page - 1) * limit + index + 1)
+        .toString()
+        .padStart(2, "0")}`,
+      name: fullName || user.email,
+      email: user.email,
+      phoneNumber: user.contactNumber || "N/A",
+      tiers: tiersName,
+      amount: amount,
+      address: user.locationName || "N/A",
+      createdAt: user.createdAt,
+      avatar: user.profileImage || defaultAvatar,
+      status: status,
+    };
+  });
 
   const columns: TableColumnsType<DataType> = [
     {
@@ -208,7 +210,13 @@ const PremiumUsers = () => {
           <Table<DataType>
             columns={columns}
             dataSource={dataSource}
-            pagination={{ pageSize: 5 }}
+            pagination={{
+              current: page,
+              pageSize: limit,
+              total: response?.meta?.total || 0,
+              onChange: (newPage) => setPage(newPage),
+              showSizeChanger: false,
+            }}
             style={{ borderRadius: "20px", overflow: "hidden" }}
             components={components}
           />
