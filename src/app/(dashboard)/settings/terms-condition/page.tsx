@@ -1,20 +1,24 @@
 "use client";
 
-import { quillText } from "@/app/_components/QuillTextEditor/quill.const";
 import QuillTextEditor from "@/app/_components/QuillTextEditor/QuillTextEditor";
-import { useState } from "react";
+import {
+  useGetTermsQuery,
+  useUpdateTermsMutation,
+} from "@/redux/features/pat/pat.api";
+import { useEffect, useState } from "react";
 
 const TermsCondition = () => {
-  // const { data: quillDataText, isLoading } = useGetTermsQuery(undefined);
+  const { data: quillDataText, isLoading } = useGetTermsQuery(undefined);
   const [quillData, setQuillData] = useState("");
+  const [updateTerms] = useUpdateTermsMutation();
 
-  // useEffect(() => {
-  //   if (quillDataText?.success && quillDataText?.data?.body) {
-  //     setQuillData(quillDataText.data.body);
-  //   }
-  // }, [quillDataText]);
+  useEffect(() => {
+    if (quillDataText?.success && quillDataText?.data?.body) {
+      setQuillData(quillDataText.data.body);
+    }
+  }, [quillDataText, isLoading]);
 
-  // const [updateTerms] = useUpdateTermsMutation();
+  if (isLoading) return <p>Loading Terms & Conditions...</p>;
 
   return (
     <>
@@ -22,7 +26,7 @@ const TermsCondition = () => {
         title="Terms & Conditions"
         quillData={quillData}
         setQuillData={setQuillData}
-        updateTextIntoDB={quillText}
+        updateTextIntoDB={updateTerms}
       />
     </>
   );

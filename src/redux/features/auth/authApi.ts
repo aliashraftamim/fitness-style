@@ -52,7 +52,11 @@ const authApi = baseApi.injectEndpoints({
     }),
 
     changeMyPassword: builder.mutation({
-      query: (payload: { oldPassword: string; newPassword: string }) => ({
+      query: (payload: {
+        oldPassword: string;
+        newPassword: string;
+        confirmPassword: string;
+      }) => ({
         url: "/auth/change-password",
         method: "PATCH",
         body: payload,

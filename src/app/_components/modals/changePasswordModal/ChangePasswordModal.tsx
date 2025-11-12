@@ -1,5 +1,8 @@
 "use client";
 
+import { useChangeMyPasswordMutation } from "@/redux/features/auth/authApi";
+import { logout } from "@/redux/features/auth/authSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import { Button, Input, Modal } from "antd";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -17,8 +20,8 @@ interface IChangePassword {
 
 const ChangePasswordModal = ({ open, setOpen }: any) => {
   const [isForgotPassword, setIsForgotPassword] = useState(false);
-
-  // const [changePassword] = useChangeMyPasswordMutation();
+  const mutation = useAppDispatch();
+  const [changePassword] = useChangeMyPasswordMutation();
 
   const router = useRouter();
 
@@ -37,12 +40,17 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
       return;
     }
 
-    // const res = await changePassword({ oldPassword, newPassword }).unwrap();
+    const res = await changePassword({
+      oldPassword,
+      newPassword,
+      confirmPassword,
+    }).unwrap();
 
-    // if (res.success) {
-    //   toast.success("Password changed successfully");
-    //   router.push("/login");
-    // }
+    if (res.success) {
+      toast.success("Password changed successfully");
+      mutation(logout());
+      router.push("/login");
+    }
   };
 
   const handleForgotPasswordToggle = () => {
@@ -70,7 +78,7 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
             <h2 className="font-medium">Change Password</h2>
           </span>
           <p className="text-[#333333] mt-1">
-            Your password must be 8-10 characters long.
+            Your password must be 6 characters long.
           </p>
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Old Password */}
@@ -84,8 +92,8 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
                 rules={{
                   required: "Old password is required",
                   minLength: {
-                    value: 8,
-                    message: "Password must be at least 8 characters long",
+                    value: 6,
+                    message: "Password must be at least 6 characters long",
                   },
                 }}
                 render={({ field }) => (
@@ -116,8 +124,8 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
                 rules={{
                   required: "New password is required",
                   minLength: {
-                    value: 8,
-                    message: "Password must be at least 8 characters long",
+                    value: 6,
+                    message: "Password must be at least 6 characters long",
                   },
                 }}
                 render={({ field }) => (

@@ -8,6 +8,7 @@ import { FaAngleRight } from "react-icons/fa6";
 const page = () => {
   const [open, setOpen] = useState(false);
   const [openResponsive, setOpenResponsive] = useState(false);
+  
 
   return (
     <div className="h-screen pt-20 !pl-20">

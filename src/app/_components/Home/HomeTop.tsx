@@ -1,26 +1,30 @@
+"use client";
+import { useGetDashboardOverviewQuery } from "@/redux/features/admin/overview.api";
 import { FaHandHoldingDollar } from "react-icons/fa6";
 import { MdWorkHistory } from "react-icons/md";
 import { TbUsers } from "react-icons/tb";
 
-const stats = [
-  {
-    icon: <FaHandHoldingDollar size={28} />,
-    label: "Total Earnings",
-    value: "$5,000",
-  },
-  {
-    icon: <TbUsers size={28} />,
-    label: "Total Users",
-    value: "1,204",
-  },
-  {
-    icon: <MdWorkHistory size={28} />,
-    label: "Workouts Completed",
-    value: "687",
-  },
-];
-
 const HomeTop = () => {
+  const { data: users, isLoading } = useGetDashboardOverviewQuery(undefined);
+
+  const stats = [
+    {
+      icon: <FaHandHoldingDollar size={28} />,
+      label: "Total Earnings",
+      value: users?.data?.totalEarning || "$00.00",
+    },
+    {
+      icon: <TbUsers size={28} />,
+      label: "Total Users",
+      value: users?.data?.totalUsers || "0",
+    },
+    {
+      icon: <MdWorkHistory size={28} />,
+      label: "Workouts Completed",
+      value: users?.data?.totalWorkoutCompleted || "0",
+    },
+  ];
+
   return (
     <div className="w-full px-4 py-6">
       <div className="grid gap-6 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">

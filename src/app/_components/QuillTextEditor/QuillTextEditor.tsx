@@ -84,7 +84,3 @@ const QuillTextEditor = ({
 export default dynamic(() => Promise.resolve(QuillTextEditor), {
   ssr: false,
 });
-
-function updatePrivacy(arg0: { description: string }) {
-  throw new Error("Function not implemented.");
-}

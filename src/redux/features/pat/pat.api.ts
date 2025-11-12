@@ -4,21 +4,21 @@ const patApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     updatePrivacy: builder.mutation({
       query: (payload) => ({
-        url: "/pat/create-privacy",
+        url: "/pat/privacy",
         method: "PUT",
         body: payload,
       }),
     }),
     updateTerms: builder.mutation({
       query: (payload) => ({
-        url: "/pat/create-terms",
+        url: "/pat/terms",
         method: "PUT",
         body: payload,
       }),
     }),
     updateAboutUs: builder.mutation({
       query: (payload) => ({
-        url: "/pat/create-about",
+        url: "/pat/about",
         method: "PUT",
         body: payload,
       }),

@@ -1,10 +1,17 @@
 "use client";
 
+import {
+  useBlockUserMutation,
+  useGetAllUsersQuery,
+  useUnblockUserMutation,
+} from "@/redux/features/admin/users.api";
 import { EyeOutlined } from "@ant-design/icons";
 import type { TableColumnsType } from "antd";
 import { Avatar, Modal, Space, Table, Tooltip } from "antd";
 import React, { useState } from "react";
 import { GoBlocked } from "react-icons/go";
+import { toast } from "sonner";
+import { IUser } from "../users/user.interface";
 
 interface DataType {
   key: React.Key;
@@ -14,7 +21,7 @@ interface DataType {
   phoneNumber: string;
   status: string;
   address: string;
-  createdAt: string;
+  createdAt: Date | string;
   avatar: string;
   action: React.ReactNode;
 }
@@ -23,33 +30,16 @@ const RecentUser: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<DataType | null>(null);
 
-  // ✅ New state for block confirmation
+  // Block / Unblock handling
+  const [actionUser, setActionUser] = useState<DataType | null>(null);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
-  const [blockUserData, setBlockUserData] = useState<DataType | null>(null);
+  const [unblockModalVisible, setUnblockModalVisible] = useState(false);
 
-  const users = [
-    {
-      _id: "1",
-      name: "John Doe",
-      email: "john@example.com",
-      phoneNumber: "0123456789",
-      status: "active",
-      address: "123 Main Street, Dhaka",
-      createdAt: "2025-07-15T10:00:00Z",
-      profileImage: "",
-    },
-    {
-      _id: "2",
-      name: "Jane Smith",
-      email: "jane@example.com",
-      phoneNumber: "0987654321",
-      status: "active",
-      address: "456 Elm Street, Chittagong",
-      createdAt: "2025-07-16T12:30:00Z",
-      profileImage: "",
-    },
-  ];
+  const { data: recentUsers } = useGetAllUsersQuery({ limit: 2 });
+  const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation();
+  const [unblockUser, { isLoading: isUnblocking }] = useUnblockUserMutation();
 
+  // Open user details modal
   const handleViewUser = (user: DataType) => {
     setSelectedUser(user);
     setIsModalVisible(true);
@@ -60,11 +50,46 @@ const RecentUser: React.FC = () => {
     setSelectedUser(null);
   };
 
+  // Open block/unblock confirmation modals
   const handleBlockUser = (user: DataType) => {
-    setBlockUserData(user);
+    setActionUser(user);
     setBlockModalVisible(true);
   };
 
+  const handleUnblockUser = (user: DataType) => {
+    setActionUser(user);
+    setUnblockModalVisible(true);
+  };
+
+  // Confirm block
+  const confirmBlockUser = async () => {
+    if (actionUser) {
+      try {
+        await blockUser(actionUser.key).unwrap();
+        toast.success("User blocked successfully");
+        setBlockModalVisible(false);
+        setActionUser(null);
+      } catch (err) {
+        toast.error("Failed to block user");
+      }
+    }
+  };
+
+  // Confirm unblock
+  const confirmUnblockUser = async () => {
+    if (actionUser) {
+      try {
+        await unblockUser(actionUser.key).unwrap();
+        toast.success("User unblocked successfully");
+        setUnblockModalVisible(false);
+        setActionUser(null);
+      } catch (err) {
+        toast.error("Failed to unblock user");
+      }
+    }
+  };
+
+  // Table columns
   const columns: TableColumnsType<DataType> = [
     {
       title: "Serial",
@@ -112,42 +137,55 @@ const RecentUser: React.FC = () => {
     },
   ];
 
-  const dataSource: DataType[] = users.map((user, index) => {
-    const userData: DataType = {
-      key: user._id,
-      serial: `#${(index + 1).toString().padStart(2, "0")}`,
-      name: user.name,
-      email: user.email,
-      phoneNumber: user.phoneNumber,
-      status: user.status,
-      address: user.address,
-      createdAt: user.createdAt,
-      avatar:
-        user.profileImage ||
-        "https://res.cloudinary.com/dhp4mffqp/image/upload/v1740493576/man-2_scexda.png",
-      action: <></>,
-    };
+  // Table data
+  const dataSource: DataType[] = recentUsers?.data?.map(
+    (user: IUser, index: number) => {
+      const userData: DataType = {
+        key: user._id,
+        serial: `#${(index + 1).toString().padStart(2, "0")}`,
+        name: user.firstName,
+        email: user.email,
+        phoneNumber: user.contactNumber,
+        status: user.status,
+        address: user.locationName,
+        createdAt: user.createdAt,
+        avatar:
+          user.profileImage ||
+          "https://res.cloudinary.com/dhp4mffqp/image/upload/v1740493576/man-2_scexda.png",
+        action: <></>,
+      };
 
-    userData.action = (
-      <div className="flex items-center justify-center space-x-2">
-        <Tooltip title="View Details">
-          <EyeOutlined
-            onClick={() => handleViewUser(userData)}
-            className="text-lg cursor-pointer"
-          />
-        </Tooltip>
-        <Tooltip title="Block User">
-          <GoBlocked
-            color="red"
-            className="text-lg cursor-pointer"
-            onClick={() => handleBlockUser(userData)}
-          />
-        </Tooltip>
-      </div>
-    );
+      userData.action = (
+        <div className="flex items-center justify-center space-x-2">
+          <Tooltip title="View Details">
+            <EyeOutlined
+              onClick={() => handleViewUser(userData)}
+              className="text-lg cursor-pointer"
+            />
+          </Tooltip>
+          {user.status === "BLOCKED" ? (
+            <Tooltip title="Unblock User">
+              <GoBlocked
+                color="green"
+                className="text-lg cursor-pointer"
+                onClick={() => handleUnblockUser(userData)}
+              />
+            </Tooltip>
+          ) : (
+            <Tooltip title="Block User">
+              <GoBlocked
+                color="red"
+                className="text-lg cursor-pointer"
+                onClick={() => handleBlockUser(userData)}
+              />
+            </Tooltip>
+          )}
+        </div>
+      );
 
-    return userData;
-  });
+      return userData;
+    }
+  );
 
   const components = {
     header: {
@@ -205,16 +243,11 @@ const RecentUser: React.FC = () => {
         )}
       </Modal>
 
-      {/* Custom Block Confirmation Modal */}
+      {/* Block Confirmation Modal */}
       <Modal
         open={blockModalVisible}
         onCancel={() => setBlockModalVisible(false)}
-        onOk={() => {
-          if (blockUserData) {
-            console.log("Blocked user:", blockUserData);
-          }
-          setBlockModalVisible(false);
-        }}
+        onOk={confirmBlockUser}
         okText="Block"
         cancelText="Cancel"
         okButtonProps={{ danger: true }}
@@ -222,10 +255,29 @@ const RecentUser: React.FC = () => {
         width={300}
         closable={false}
       >
-        {blockUserData && (
-          <div className="">
-            <p>Are you sure you want to block</p>
-          </div>
+        {actionUser && (
+          <p className="text-center">
+            Are you sure you want to block <strong>{actionUser.name}</strong>?
+          </p>
+        )}
+      </Modal>
+
+      {/* Unblock Confirmation Modal */}
+      <Modal
+        open={unblockModalVisible}
+        onCancel={() => setUnblockModalVisible(false)}
+        onOk={confirmUnblockUser}
+        okText="Unblock"
+        cancelText="Cancel"
+        okButtonProps={{ type: "primary" }}
+        centered
+        width={300}
+        closable={false}
+      >
+        {actionUser && (
+          <p className="text-center">
+            Are you sure you want to unblock <strong>{actionUser.name}</strong>?
+          </p>
         )}
       </Modal>
     </div>

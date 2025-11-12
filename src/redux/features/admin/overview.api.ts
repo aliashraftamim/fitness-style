@@ -4,7 +4,7 @@ const dashboardOverview = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getDashboardOverview: builder.query({
       query: () => ({
-        url: "/dashboard/home/top",
+        url: "/overview/home-top-count",
         method: "GET",
       }),
     }),
@@ -12,7 +12,7 @@ const dashboardOverview = baseApi.injectEndpoints({
     getEarningChart: builder.query({
       query: (params) => {
         return {
-          url: `/dashboard/home/earning-chart?year=${params}`,
+          url: `/overview/earning-chart?year=${params}`,
           method: "GET",
         };
       },

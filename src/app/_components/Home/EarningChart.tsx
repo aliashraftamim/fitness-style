@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetEarningChartQuery } from "@/redux/features/admin/overview.api";
 import { Select } from "antd";
 import { useState } from "react";
 import {
@@ -12,85 +13,47 @@ import {
   YAxis,
 } from "recharts";
 
-// Dummy data for different years
-const earningsDataByYear: Record<string, { name: string; earnings: number }[]> =
-  {
-    "2022": [
-      { name: "Jan", earnings: 2200 },
-      { name: "Feb", earnings: 3100 },
-      { name: "Mar", earnings: 2700 },
-      { name: "Apr", earnings: 3400 },
-      { name: "May", earnings: 3900 },
-      { name: "Jun", earnings: 3300 },
-      { name: "Jul", earnings: 3600 },
-      { name: "Aug", earnings: 4100 },
-      { name: "Sep", earnings: 3700 },
-      { name: "Oct", earnings: 4400 },
-      { name: "Nov", earnings: 4000 },
-      { name: "Dec", earnings: 4500 },
-    ],
-    "2023": [
-      { name: "Jan", earnings: 2600 },
-      { name: "Feb", earnings: 3500 },
-      { name: "Mar", earnings: 3100 },
-      { name: "Apr", earnings: 3900 },
-      { name: "May", earnings: 4200 },
-      { name: "Jun", earnings: 4600 },
-      { name: "Jul", earnings: 4400 },
-      { name: "Aug", earnings: 4700 },
-      { name: "Sep", earnings: 4300 },
-      { name: "Oct", earnings: 5000 },
-      { name: "Nov", earnings: 4800 },
-      { name: "Dec", earnings: 5200 },
-    ],
-    "2024": [
-      { name: "Jan", earnings: 200 },
-      { name: "Feb", earnings: 4000 },
-      { name: "Mar", earnings: 500 },
-      { name: "Apr", earnings: 5000 },
-      { name: "May", earnings: 4200 },
-      { name: "Jun", earnings: 600 },
-      { name: "Jul", earnings: 300 },
-      { name: "Aug", earnings: 5100 },
-      { name: "Sep", earnings: 4700 },
-      { name: "Oct", earnings: 5300 },
-      { name: "Nov", earnings: 490 },
-      { name: "Dec", earnings: 5800 },
-    ],
-  };
+interface MonthlyIncome {
+  month: string;
+  income: number;
+}
 
 const EarningChart = () => {
-  const [selectedYear, setSelectedYear] = useState("2024");
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 11 }, (_, i) => currentYear - i); // Current year + previous 10
+
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString());
+
+  // API call with selected year
+  const { data: chartData } = useGetEarningChartQuery(selectedYear);
+  const data: MonthlyIncome[] = chartData?.data || [];
 
   return (
     <div className="bg-white rounded-2xl shadow-md p-10">
-      <div className="w-full h-[460px]  p-6">
+      <div className="w-full h-[460px] p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-semibold text-gray-800">
             Monthly Earning Summary
           </h3>
+
           <Select
-            defaultValue="2024"
+            value={selectedYear}
             style={{ width: 120 }}
             onChange={(value) => setSelectedYear(value)}
-            options={[
-              { value: "2022", label: "2022" },
-              { value: "2023", label: "2023" },
-              { value: "2024", label: "2024" },
-            ]}
+            options={years.map((year) => ({
+              value: year.toString(),
+              label: year.toString(),
+            }))}
           />
         </div>
 
         {/* Chart */}
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            // barCategoryGap={"20%"}
-            data={earningsDataByYear[selectedYear]}
-          >
+          <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis
-              dataKey="name"
+              dataKey="month"
               tick={{ fontSize: 12 }}
               stroke="#001d46"
               label={{
@@ -120,7 +83,7 @@ const EarningChart = () => {
               formatter={(value: number) => [`$${value}`, "Earnings"]}
             />
             <Bar
-              dataKey="earnings"
+              dataKey="income"
               barSize={70}
               fill="#022914"
               radius={[6, 6, 0, 0]}

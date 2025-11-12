@@ -11,11 +11,13 @@ import { IVideo } from "./video.interface";
 interface VideoListProps {
   parentContentId: string;
   handleEdit: (id: string) => void;
+  tiersName: string;
 }
 
 const VideoList: React.FC<VideoListProps> = ({
   parentContentId,
   handleEdit,
+  tiersName,
 }) => {
   const { data: videoContent } = useGetVideoByContentIdQuery(parentContentId);
   const [deleteVideo, { isLoading: deleteVideoLoading }] =
@@ -98,9 +100,15 @@ const VideoList: React.FC<VideoListProps> = ({
           {/* Right - Content */}
           <div className="flex-1 space-y-3">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900">
+              <h3 className="text-xl font-semibold text-gray-900 !mb-0">
                 {video.title}
               </h3>
+              <div className="mb-2">
+                <span className="text-sm text-gray-500">Tiers: </span>
+                <span className="text-sm !text-green-500 mb-1">
+                  {tiersName}
+                </span>
+              </div>
               {video.subtitle && (
                 <p className="text-sm text-gray-500 mt-1">{video.subtitle}</p>
               )}

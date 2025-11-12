@@ -12,7 +12,7 @@ const adminApi = baseApi.injectEndpoints({
 
     updateMe: builder.mutation({
       query: (payload) => ({
-        url: "/user",
+        url: "/user/update-me",
         method: "PUT",
         body: payload,
       }),

@@ -71,6 +71,7 @@ const VideoManager = () => {
         <VideoList
           parentContentId={params?.id as string}
           handleEdit={handleEdit}
+          tiersName={(videoContent?.data?.tier?.name as string) || ""}
         />
       </div>
     </div>

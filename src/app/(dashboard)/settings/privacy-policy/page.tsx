@@ -1,20 +1,23 @@
 "use client";
 
-import { quillText } from "@/app/_components/QuillTextEditor/quill.const";
 import QuillTextEditor from "@/app/_components/QuillTextEditor/QuillTextEditor";
-import { useState } from "react";
+import {
+  useGetPrivacyQuery,
+  useUpdatePrivacyMutation,
+} from "@/redux/features/pat/pat.api";
+import { useEffect, useState } from "react";
 
 const PrivacyPolicyPage = () => {
-  // const { data: privacy } = useGetPrivacyQuery(undefined);
+  const { data: privacy, isLoading } = useGetPrivacyQuery(undefined);
   const [quillData, setQuillData] = useState("");
 
-  // useEffect(() => {
-  //   if (privacy?.success && privacy?.data?.body) {
-  //     setQuillData(privacy.data.body);
-  //   }
-  // }, [privacy]);
+  useEffect(() => {
+    if (privacy?.success && privacy?.data?.body) {
+      setQuillData(privacy.data.body);
+    }
+  }, [privacy, isLoading]);
 
-  // const [updatePrivacy] = useUpdatePrivacyMutation();
+  const [updatePrivacy] = useUpdatePrivacyMutation();
 
   return (
     <>
@@ -22,7 +25,7 @@ const PrivacyPolicyPage = () => {
         title="Privacy Policy"
         quillData={quillData}
         setQuillData={setQuillData}
-        updateTextIntoDB={quillText}
+        updateTextIntoDB={updatePrivacy}
       />
     </>
   );

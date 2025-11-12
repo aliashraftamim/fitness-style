@@ -1,12 +1,15 @@
 "use client";
 
+import {
+  useGetMeQuery,
+  useUpdateMeMutation,
+} from "@/redux/features/admin/admin.api";
 import { UploadOutlined } from "@ant-design/icons";
 import { Button, Form, Input, Upload } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { FaRegEdit } from "react-icons/fa";
 import { HiOutlineArrowSmLeft } from "react-icons/hi";
 import { toast } from "sonner";
 
@@ -16,43 +19,92 @@ const PersonalInfoPage = () => {
   const [profileImage, setProfileImage] = useState(
     "https://res.cloudinary.com/demo/image/upload/v1698900000/default-profile.jpg"
   );
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
-  const { control, handleSubmit, setValue } = useForm({
+  const { data: getMe, refetch } = useGetMeQuery(undefined);
+  console.log("🚀 ~ PersonalInfoPage ~ getMe:", getMe);
+  const [updateMe, { isLoading }] = useUpdateMeMutation();
+
+  const { control, handleSubmit, reset } = useForm({
     defaultValues: {
-      name: "John Doe",
-      email: "john.doe@example.com",
-      phoneNumber: "+880123456789",
+      name: "",
+      email: "",
+      phoneNumber: "",
     },
   });
 
+  useEffect(() => setHasMounted(true), []);
+
   useEffect(() => {
-    setHasMounted(true);
-  }, []);
-
-  if (!hasMounted) {
-    return null;
-  }
-
-  const toggleEditMode = () => {
-    if (!isDisabled) {
-      toast.success("Changes saved (demo only)");
+    if (getMe?.data) {
+      reset({
+        name: getMe.data.firstName,
+        email: getMe.data.email,
+        phoneNumber: getMe.data.contactNumber,
+      });
+      setProfileImage(
+        getMe.data.profileImage ||
+          "https://res.cloudinary.com/demo/image/upload/v1698900000/default-profile.jpg"
+      );
     }
-    setIsDisabled(!isDisabled);
-  };
+  }, [getMe, reset]);
 
+  if (!hasMounted) return null;
+
+  const handleToggleEdit = () => setIsDisabled(false);
+
+  // Image upload handle + auto save
   const handleUploadImage = async (info: any) => {
-    if (info.file.status === "done") {
-      const newImageUrl = URL.createObjectURL(info.file.originFileObj);
-      setProfileImage(newImageUrl);
-      toast.success(`${info.file.name} uploaded successfully (demo only)`);
+    console.log("🚀 ~ handleUploadImage ~ info:", info.file);
+    if (info.file) {
+      const file = info.file.originFileObj;
+      console.log("🚀 ~ handleUploadImage ~ file:", file);
+
+      setProfileImage(URL.createObjectURL(file));
+      setProfileImageFile(file);
+
+      try {
+        const formData = new FormData();
+        formData.append("profileImage", file);
+
+        // API call
+        const response = await updateMe(formData).unwrap();
+        console.log("🚀 ~ handleUploadImage ~ response:", response);
+
+        // backend থেকে আসা image URL state এ set করবে
+        if (response.data?.profileImage) {
+          setProfileImage(response.data.profileImage);
+        }
+
+        toast.success("Profile image updated successfully!");
+        refetch();
+      } catch (err) {
+        toast.error("Failed to update profile image.");
+        console.error(err);
+      }
     } else if (info.file.status === "error") {
       toast.error(`${info.file.name} upload failed.`);
     }
   };
 
-  const onSubmit = (values: any) => {
-    console.log("Submitted Values (demo):", values);
-    toast.success("Info updated successfully (demo only)!");
+  // Form submit for name/phone only
+  const onSubmit = async (values: any) => {
+    try {
+      const payload = {
+        firstName: values.name,
+        contactNumber: values.phoneNumber,
+      };
+      const formData = new FormData();
+      formData.append("data", JSON.stringify(payload));
+
+      await updateMe(formData).unwrap();
+      toast.success("Info updated successfully!");
+      refetch();
+      setIsDisabled(true);
+    } catch (err) {
+      toast.error("Failed to update info.");
+      console.error(err);
+    }
   };
 
   return (
@@ -68,17 +120,27 @@ const PersonalInfoPage = () => {
           </Link>
           <h2 className="font-medium">Personal Information</h2>
         </span>
-        <Button
-          icon={<FaRegEdit size={18} />}
-          className="!bg-brand-primary w-[206px] h-[56px]"
-          size="large"
-          type="primary"
-          onClick={toggleEditMode}
-          htmlType={!isDisabled ? "submit" : "button"}
-        >
-          {isDisabled ? "Edit Form" : "Save Changes"}
-        </Button>
+
+        {isDisabled ? (
+          <button
+            className="!bg-brand-primary !text-white  !w-[206px] !h-[40px] !rounded-xl"
+            onClick={handleToggleEdit}
+          >
+            Edit Form
+          </button>
+        ) : (
+          <Button
+            className="!bg-brand-primary w-[206px] h-[56px]"
+            size="large"
+            type="primary"
+            htmlType="submit"
+            loading={isLoading}
+          >
+            Save Changes
+          </Button>
+        )}
       </div>
+
       <div className="flex items-center justify-start gap-10">
         {/* Profile Image Section */}
         <div className="min-w-[300px] h-[365px] bg-[#C4E5CD] border border-[#41AB5D] rounded-lg flex flex-col items-center justify-center">
@@ -89,12 +151,19 @@ const PersonalInfoPage = () => {
             alt="admin-image"
             className="rounded-full object-cover size-28 mb-3"
           />
-          <Upload onChange={handleUploadImage} showUploadList={false}>
-            <Button icon={<UploadOutlined />}>Click to Upload</Button>
+          <Upload
+            onChange={handleUploadImage}
+            showUploadList={false}
+            disabled={isDisabled} // Only enable in edit mode
+          >
+            <Button icon={<UploadOutlined />} disabled={isDisabled}>
+              Click to Upload
+            </Button>
           </Upload>
           <h3 className="text-[18px] mt-[30px]">Profile</h3>
           <h2 className="capitalize">admin</h2>
         </div>
+
         {/* Form Fields */}
         <div className="mt-[12px] min-w-[700px]">
           <Form.Item label="Name">
