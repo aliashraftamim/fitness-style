@@ -1,10 +1,10 @@
 "use client";
 
 import { useGetVideoContentQuery } from "@/redux/features/admin/video-content.api";
-import Link from "next/link";
 import { useState } from "react";
 import Loading from "../MAIN/loading/Loading";
 import AddPlanModal, { IWorkoutPlan } from "./AddWorkout";
+import WorkoutCard from "./WorkoutCard";
 
 export type TFormData = {
   _id?: string;
@@ -30,74 +30,8 @@ const initialFormData: TFormData = {
   workoutPlan: [],
 };
 
-// Modal Component
-const DynamicModal = ({ isOpen, onClose, children }: any) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-800">
-            Add New Workout
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors text-2xl leading-none"
-          >
-            ×
-          </button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-};
-
-// Workout Card Component
-const WorkoutCard = ({ workout }: { workout: TFormData }) => (
-  <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] border border-gray-100">
-    <div className="relative h-48 bg-gradient-to-br from-green-50 to-green-100 overflow-hidden">
-      <img
-        src={workout.image}
-        alt={workout.workoutTitle}
-        className="w-full h-full object-cover"
-      />
-      {workout.isCompleted && (
-        <div className="absolute top-3 left-3 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
-          ✓ Completed
-        </div>
-      )}
-    </div>
-    <div className="p-5">
-      <h3 className="font-semibold text-lg text-gray-900 mb-1 line-clamp-1">
-        {workout.workoutTitle}
-      </h3>
-      <p className="text-sm text-green-600 font-medium mb-3">
-        {workout.subtitle}
-      </p>
-      <p className="text-sm text-gray-600 line-clamp-2 mb-4">
-        {workout.description}
-      </p>
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
-          {workout.workoutType}
-        </span>
-        <Link
-          href={`/video-content/${workout._id}`}
-          className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors"
-        >
-          View Details →
-        </Link>
-      </div>
-    </div>
-  </div>
-);
-
 const WorkoutPage = () => {
-  // Replace this with your actual API hook: const { data: workoutsData, isLoading } = useGetVideoContentQuery(undefined);
-
-  const { data: workoutsData, isLoading } = useGetVideoContentQuery(undefined);
+  const { data: workoutsData, isLoading } = useGetVideoContentQuery({});
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formData, setFormData] = useState<TFormData>(initialFormData);

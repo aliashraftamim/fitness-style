@@ -78,6 +78,7 @@ export const baseApi = createApi({
     "tiers",
     "subscriptions",
     "badges",
+    "videoContent",
   ],
   baseQuery: baseQueryWithRefreshToken,
   endpoints: () => ({}),

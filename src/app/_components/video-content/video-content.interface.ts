@@ -13,3 +13,36 @@ export interface IVideoContent {
   createdAt: string;
   updatedAt: string;
 }
+
+// workout.types.ts
+
+export type TFormData = {
+  _id?: string;
+  image: string;
+  videoUrl: string;
+  workoutTitle: string;
+  subtitle: string;
+  description: string;
+  tier: string;
+  workoutType: string;
+  workoutPlan: string[];
+  isCompleted?: boolean;
+};
+
+export interface IWorkoutPlan {
+  // Add your workout plan interface properties here
+  id?: string;
+  name: string;
+  exercises: string[];
+}
+
+export const initialFormData: TFormData = {
+  image: "",
+  videoUrl: "",
+  workoutTitle: "",
+  subtitle: "",
+  description: "",
+  tier: "",
+  workoutType: "Beginner",
+  workoutPlan: [],
+};

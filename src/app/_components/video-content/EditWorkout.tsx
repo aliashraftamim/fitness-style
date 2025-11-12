@@ -1,33 +1,39 @@
 "use client";
 
 import { useGetAllTiersQuery } from "@/redux/features/admin/tiers.api";
-import { useCreateVideoContentMutation } from "@/redux/features/admin/video-content.api";
+import { useUpdateVideoContentMutation } from "@/redux/features/admin/video-content.api";
 import { Button } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DynamicModal from "../shared/DynamicModal";
 
 export interface IWorkoutPlan {
+  _id?: string;
   workoutTitle: string;
   subtitle: string;
   description: string;
+  image?: string;
+  videoUrl?: string;
   workoutType: string;
   workoutPlan: string[];
   tier: string;
 }
 
-interface AddPlanModalProps {
+interface EditWorkoutModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAdd: (plan: any) => void;
+  editData?: IWorkoutPlan | null;
 }
 
-const AddPlanModal: React.FC<AddPlanModalProps> = ({
+const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
   isOpen,
   onClose,
   onAdd,
+  editData,
 }) => {
-  const [addPlan, { isLoading: isCreating }] = useCreateVideoContentMutation();
+  const [updatePlan, { isLoading: isUpdating }] =
+    useUpdateVideoContentMutation();
   const { data: tiersData } = useGetAllTiersQuery({});
   const tiers = tiersData?.data || [];
 
@@ -46,6 +52,20 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
+
+  // Load edit data when modal opens
+  useEffect(() => {
+    if (editData && isOpen) {
+      setPlanData(editData);
+      // If there's existing image/video URL, show preview
+      if (editData.image) {
+        setImagePreview(editData.image);
+      }
+      if (editData.videoUrl) {
+        setVideoPreview(editData.videoUrl);
+      }
+    }
+  }, [editData, isOpen]);
 
   // 🔄 Handle text/select/textarea inputs
   const handleInputChange = (
@@ -103,9 +123,12 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
 
   // 🚀 Submit with FormData
   const handleSubmit = async () => {
-    console.log("🚀 ~ handleSubmit ~ planData:", planData);
     if (!planData.workoutTitle || !planData.description || !planData.tier) {
       return toast.error("Please fill all required fields!");
+    }
+
+    if (!planData._id) {
+      return toast.error("Video content ID is missing!");
     }
 
     try {
@@ -123,15 +146,19 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
         })
       );
 
-      // Append files
+      // Append files only if new files are selected
       if (imageFile) formData.append("image", imageFile);
       if (videoFile) formData.append("video", videoFile);
 
-      // API Call
-      const result = await addPlan(formData).unwrap();
+      // API Call with id and formData
+      const result = await updatePlan({
+        id: planData._id,
+        data: formData,
+      }).unwrap();
+
       onAdd(result);
       onClose();
-      toast.success("Workout added successfully!");
+      toast.success("Workout updated successfully!");
 
       // Reset all
       setImageFile(null);
@@ -150,7 +177,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
     } catch (err: any) {
       console.error(err);
       toast.error(
-        err?.data?.message || err.message || "Failed to add workout."
+        err?.data?.message || err.message || "Failed to update workout."
       );
     }
   };
@@ -349,11 +376,11 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
             Cancel
           </Button>
           <Button
-            loading={isCreating}
+            loading={isUpdating}
             onClick={handleSubmit}
             className="flex-1 !bg-green-600 !text-white !py-3 !px-4 rounded-lg hover:!bg-green-700 font-medium shadow-sm hover:shadow-md transition-all"
           >
-            Create Workout
+            Update Workout
           </Button>
         </div>
       </div>
@@ -361,4 +388,4 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
   );
 };
 
-export default AddPlanModal;
+export default EditWorkoutModal;

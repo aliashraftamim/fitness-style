@@ -1,249 +1,193 @@
 "use client";
 
-import { Button, Upload } from "antd";
-import Image from "next/image";
+import { useDeleteVideoContentMutation } from "@/redux/features/admin/video-content.api";
 import Link from "next/link";
-import React, { useState } from "react";
-import { FaUpload } from "react-icons/fa6";
-import DynamicModal from "../shared/DynamicModal";
-import { TFormData } from "./WorkoutPage";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import DeleteConfirmationModal from "../MAIN/delete-confirmation-modal/DeleteConfirmModal";
+import EditWorkoutModal from "./EditWorkout";
+import { TFormData } from "./video-content.interface";
 
-interface EditingWorkout {
-  id: number;
-  title: string;
-  subtitle: string;
-  image: string;
+interface WorkoutCardProps {
+  workout: TFormData;
 }
 
-const WorkoutCard = ({ workout }: { workout: TFormData }) => {
-  const [workouts, setWorkouts] = useState<TFormData[]>([]);
+// Workout Card Component
+const WorkoutCard = ({ workout }: WorkoutCardProps) => {
+  const [showMenu, setShowMenu] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
 
-  const [editingWorkout, setEditingWorkout] = useState<EditingWorkout | null>(
-    null
-  );
+  const [deleteWorkout, { isLoading: isDeleting }] =
+    useDeleteVideoContentMutation();
 
-  const [newTitle, setNewTitle] = useState("");
-  const [newSubtitle, setNewSubtitle] = useState("");
-  const [itemImage, setItemImage] = useState<string | null>(null);
-
-  const handleDelete = (id: number) => {
-    setWorkouts((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  const handleEditClick = (
-    id: number,
-    currentTitle: string,
-    currentSubtitle: string,
-    currentImage: string
-  ) => {
-    setEditingWorkout({
-      id,
-      title: currentTitle,
-      subtitle: currentSubtitle,
-      image: currentImage,
-    });
-    setNewTitle(currentTitle);
-    setNewSubtitle(currentSubtitle);
-    setItemImage(currentImage);
-  };
-
-  const handleUploadImage = (info: any) => {
-    const file = info.file.originFileObj;
-    const reader = new FileReader();
-
-    reader.onload = () => {
-      setItemImage(reader.result as string);
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
     };
 
-    if (file) {
-      reader.readAsDataURL(file);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleEdit = () => {
+    setShowMenu(false);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeleteClick = () => {
+    setShowMenu(false);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!workout._id) return;
+
+    try {
+      await deleteWorkout(workout._id).unwrap();
+      toast.success("Workout deleted successfully!");
+      setIsDeleteModalOpen(false);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.data?.message || "Failed to delete workout");
     }
   };
 
-  const handleEditSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingWorkout) {
-      return;
-    }
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+  };
 
-    setWorkouts((prev) =>
-      prev.map((item) =>
-        item.id === editingWorkout.id
-          ? {
-              ...item,
-              title: newTitle,
-              subtitle: newSubtitle,
-              image: itemImage || item.image,
-            }
-          : item
-      )
-    );
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+  };
 
-    setEditingWorkout(null);
-    setItemImage(null);
+  const handleUpdateSuccess = (result: any) => {
+    console.log("Update successful:", result);
+    // Data automatically refresh হবে RTK Query এর cache invalidation দিয়ে
   };
 
   return (
-    <div className="min-w-[30%]">
-      <div
-        key={workout.id}
-        className="relative bg-white/10 backdrop-blur-lg border border-white/20 rounded-xl overflow-hidden shadow-lg transition hover:scale-[1.01] hover:shadow-xl"
-      >
-        <Link href={`/video-content/${workout.id}`}>
-          <div className="relative h-64 w-full">
-            <Image
-              src={workout.image}
-              alt={`${workout.title} workout preview`}
-              fill
-              className="object-cover"
-            />
-            <div className="absolute bottom-0 left-0 right-0 px-4 py-3 bg-white/0 backdrop-blur-md text-white">
-              <h3 className="text-xl font-semibold">{workout.title}</h3>
-              <p className="!text-md leading-0 text-gray-200">
-                {workout.subtitle}
-              </p>
+    <>
+      <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] border border-gray-100">
+        <div className="relative h-48 bg-gradient-to-br from-green-50 to-green-100 overflow-hidden">
+          <img
+            src={workout.image}
+            alt={workout.workoutTitle}
+            className="w-full h-full object-cover"
+          />
+          {workout.isCompleted && (
+            <div className="absolute top-3 left-3 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
+              ✓ Completed
             </div>
-          </div>
-        </Link>
+          )}
 
-        <div className="flex justify-center items-center gap-10 py-8 bg-white/10 backdrop-blur-sm border-t border-white/20 px-5">
-          <button
-            type="button"
-            onClick={() => handleDelete((workout as any).id)}
-            className="!text-brand-primary border border-brand-primary font-semibold px-10 py-3 rounded hover:bg-white/20 transition w-full"
-          >
-            Delete
-          </button>
-          <button
-            type="button"
-            onClick={() =>
-              handleEditClick(
-                (workout as any).id,
-                workout.title,
-                workout.subtitle,
-                workout.image
-              )
-            }
-            className="bg-brand-primary !text-white px-10 py-3 rounded hover:bg-green-800 transition w-full"
-          >
-            Edit
-          </button>
+          {/* Three Dot Menu Button */}
+          <div className="absolute top-3 right-3" ref={menuRef}>
+            <button
+              onClick={() => setShowMenu(!showMenu)}
+              className="bg-white/90 backdrop-blur-sm hover:bg-white text-gray-700 p-2 rounded-lg shadow-lg transition-all hover:scale-105"
+              title="More options"
+            >
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 py-1 z-10 animate-fadeIn">
+                <button
+                  onClick={handleEdit}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                    />
+                  </svg>
+                  Edit Workout
+                </button>
+
+                <div className="border-t border-gray-100 my-1"></div>
+
+                <button
+                  onClick={handleDeleteClick}
+                  disabled={!workout._id}
+                  className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-red-50 hover:text-red-700 transition-colors flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                    />
+                  </svg>
+                  Delete Workout
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-5">
+          <h3 className="font-semibold text-lg text-gray-900 mb-1 line-clamp-1">
+            {workout.workoutTitle}
+          </h3>
+          <p className="text-sm text-green-600 font-medium mb-3">
+            {workout.subtitle}
+          </p>
+          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+            {workout.description}
+          </p>
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
+              {workout.workoutType}
+            </span>
+            <Link
+              href={`/video-content/${workout._id}`}
+              className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors"
+            >
+              View Details →
+            </Link>
+          </div>
         </div>
       </div>
 
-      <DynamicModal
-        isOpen={!!editingWorkout}
-        onClose={() => {
-          setEditingWorkout(null);
-          setItemImage(null);
-        }}
-      >
-        <form onSubmit={handleEditSubmit} className=" p-5 space-y-3">
-          <div className="w-full h-[200px] border rounded-lg flex flex-col items-center justify-center relative overflow-hidden ">
-            <Image
-              src={itemImage || "/images/placeholder.png"}
-              alt="workout-image"
-              fill
-              className="object-cover"
-            />
-            <Upload
-              className="w-full h-full absolute"
-              onChange={handleUploadImage}
-              showUploadList={false}
-            >
-              <Button
-                className="!w-full !h-full !absolute top-0 !bg-zinc-900 opacity-40 hover:opacity-40"
-                icon={<FaUpload />}
-              >
-                Click to Upload
-              </Button>
-            </Upload>
-          </div>
+      {/* Edit Modal */}
+      <EditWorkoutModal
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onAdd={handleUpdateSuccess}
+        editData={workout}
+      />
 
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Workout Title
-            </label>
-            <input
-              type="text"
-              name="title"
-              value={workout.title}
-              onChange={(e) => setNewSubtitle(e.target.value)}
-              placeholder="e.g. Plyometrics Power"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-
-          {/* Subtitle */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Workout Subtitle
-            </label>
-            <input
-              type="text"
-              name="subtitle"
-              value={workout.subtitle}
-              onChange={(e) => setNewSubtitle(e.target.value)}
-              placeholder="e.g. Plyometrics Workout"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-
-          {/* Tiers */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tiers
-            </label>
-            <input
-              type="text"
-              name="tiers"
-              value={workout.tiers}
-              onChange={(e) => setNewSubtitle(e.target.value)}
-              placeholder="e.g. beginner / intermediate / advanced"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-
-          {/* Type */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Workout Type
-            </label>
-            <input
-              type="text"
-              name="type"
-              value={workout.type}
-              onChange={(e) => setNewSubtitle(e.target.value)}
-              placeholder="e.g. explosive / cardio"
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={workout.description}
-              onChange={(e) => setNewSubtitle(e.target.value)}
-              placeholder="Workout description..."
-              rows={3}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-brand-primary !text-white py-3 px-4 rounded-lg hover:bg-green-800"
-          >
-            Update
-          </button>
-        </form>
-      </DynamicModal>
-    </div>
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        workoutTitle={workout.workoutTitle}
+      />
+    </>
   );
 };
 

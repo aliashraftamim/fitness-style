@@ -1,4 +1,4 @@
-import SingleWorkout from "@/app/_components/video-content/SingleWorkout";
+import SingleWorkout from "@/app/_components/video-content/single-video/SingleWorkout";
 
 const SingleWorkoutPage = () => {
   return (
