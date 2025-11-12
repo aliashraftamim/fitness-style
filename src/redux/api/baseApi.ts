@@ -41,16 +41,15 @@ const baseQueryWithRefreshToken: BaseQueryFn<
   }
   if (result?.error?.status === 401) {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_URL}/auth/refresh-token` as string,
+      `${process.env.NEXT_PUBLIC_URL}/auth/refresh-token`,
       {
-        method: "POST",
+        method: "GET",
+        credentials: "include", // 🍪 cookie পাঠাবে
       }
     );
 
     const data = await res.json();
-    console.log("🚀 ~ baseQueryWithRefreshToken ~ data:", data);
-
-    if (data?.data?.access_token) {
+    if (data?.data?.accessToken) {
       const user = (api.getState() as RootState).auth.user;
 
       api.dispatch(
@@ -79,6 +78,7 @@ export const baseApi = createApi({
     "subscriptions",
     "badges",
     "videoContent",
+    "videos",
   ],
   baseQuery: baseQueryWithRefreshToken,
   endpoints: () => ({}),

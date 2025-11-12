@@ -62,7 +62,7 @@ const videoContentApi = baseApi.injectEndpoints({
           body,
         };
       },
-      invalidatesTags: ["videoContent"],
+      invalidatesTags: ["videos"],
     }),
 
     updateVideo: builder.mutation({
@@ -73,7 +73,27 @@ const videoContentApi = baseApi.injectEndpoints({
           body: payload.data,
         };
       },
-      invalidatesTags: ["videoContent"],
+      invalidatesTags: ["videos"],
+    }),
+
+    getVideoByContentId: builder.query({
+      query: (id: string) => {
+        return {
+          url: `/video/all?parentContent=${id}`,
+          method: "GET",
+        };
+      },
+      providesTags: ["videos"],
+    }),
+
+    deleteVideo: builder.mutation({
+      query: (id) => {
+        return {
+          url: `/video/delete/${id}`,
+          method: "DELETE",
+        };
+      },
+      invalidatesTags: ["videos"],
     }),
   }),
 });
@@ -88,4 +108,7 @@ export const {
 
   useCreateVideoMutation,
   useUpdateVideoMutation,
+
+  useGetVideoByContentIdQuery,
+  useDeleteVideoMutation,
 } = videoContentApi;

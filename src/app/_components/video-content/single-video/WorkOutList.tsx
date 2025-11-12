@@ -1,55 +1,123 @@
 "use client";
 
-import React from "react";
+import {
+  useDeleteVideoMutation,
+  useGetVideoByContentIdQuery,
+} from "@/redux/features/admin/video-content.api";
+import React, { useState } from "react";
+import { MdBorderVertical } from "react-icons/md";
 import { IVideo } from "./video.interface";
 
 interface VideoListProps {
-  videos: IVideo[];
+  parentContentId: string;
   handleEdit: (id: string) => void;
-  handleDelete: (id: string) => void;
 }
 
 const VideoList: React.FC<VideoListProps> = ({
-  videos,
+  parentContentId,
   handleEdit,
-  handleDelete,
 }) => {
+  const { data: videoContent } = useGetVideoByContentIdQuery(parentContentId);
+  const [deleteVideo, { isLoading: deleteVideoLoading }] =
+    useDeleteVideoMutation();
+
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const videos = videoContent?.data || [];
+
+  const handleDelete = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this video?")) {
+      try {
+        await deleteVideo(id).unwrap();
+      } catch (error) {
+        console.error("Failed to delete video:", error);
+        alert("Failed to delete video. Please try again.");
+      }
+    }
+  };
+
   return (
-    <div className="w-full p-6 bg-zinc-200 rounded-2xl">
-      {videos.map((video) => (
+    <div className="space-y-6">
+      {videos.map((video: IVideo) => (
         <div
           key={video._id?.toString()}
-          className="bg-white shadow-md rounded-lg p-5 mb-4 flex flex-col gap-2"
+          className="relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-md transition-all duration-200 p-5 flex flex-col md:flex-row gap-6 items-start"
         >
-          <div>
-            <p className="text-lg font-semibold text-gray-800">{video.title}</p>
-            <p className="text-gray-600 text-sm">{video.subtitle}</p>
+          {/* 3-dot menu */}
+          <div className="absolute top-3 right-3">
+            <button
+              onClick={() => {
+                const id = video._id?.toString() ?? null;
+                setOpenMenuId(openMenuId === id ? null : id);
+              }}
+              className="p-2 rounded-full hover:bg-gray-100 transition"
+            >
+              <MdBorderVertical className="w-5 h-5 text-gray-600" />
+            </button>
+
+            {openMenuId === video._id?.toString() && (
+              <div className="absolute right-0 mt-2 w-32 bg-white border border-gray-200 rounded-xl shadow-md z-20">
+                <button
+                  onClick={() => {
+                    handleEdit(video._id?.toString() || "");
+                    setOpenMenuId(null);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-gray-700"
+                >
+                  Edit
+                </button>
+                <button
+                  onClick={() => {
+                    handleDelete(video._id?.toString() || "");
+                    setOpenMenuId(null);
+                  }}
+                  disabled={deleteVideoLoading}
+                  className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 text-red-600 disabled:text-gray-400"
+                >
+                  {deleteVideoLoading ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            )}
           </div>
 
-          <video
-            src={video.url}
-            controls
-            className="rounded-lg mt-2 w-full max-h-64 object-cover"
-          />
+          {/* Left - Video */}
+          <div className="md:w-1/3 w-full">
+            <video
+              src={
+                video?.url?.startsWith("http")
+                  ? video?.url
+                  : `https://${video?.url}`
+              }
+              muted
+              loop
+              playsInline
+              controls
+              className="rounded-xl shadow-sm w-full aspect-video object-cover"
+            />
+          </div>
 
-          <p className="text-gray-700 text-sm mt-2">{video.description}</p>
+          {/* Right - Content */}
+          <div className="flex-1 space-y-3">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900">
+                {video.title}
+              </h3>
+              {video.subtitle && (
+                <p className="text-sm text-gray-500 mt-1">{video.subtitle}</p>
+              )}
+            </div>
 
-          <div className="flex gap-3 mt-3">
-            <button
-              onClick={() => handleEdit(video._id?.toString() || "")}
-              className="px-4 py-1 bg-green-700 text-white rounded hover:bg-green-600"
-            >
-              Edit
-            </button>
-            <button
-              onClick={() => handleDelete(video._id?.toString() || "")}
-              className="px-4 py-1 bg-red-100 text-red-600 rounded hover:bg-red-200"
-            >
-              Delete
-            </button>
+            <p className="text-gray-700 text-sm leading-relaxed">
+              {video.description}
+            </p>
           </div>
         </div>
       ))}
+
+      {videos.length === 0 && (
+        <div className="text-center py-10 text-gray-500 bg-white rounded-xl border border-gray-200">
+          No videos available
+        </div>
+      )}
     </div>
   );
 };

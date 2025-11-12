@@ -1,3 +1,6 @@
+// ============================================
+// 2. VideoForm.tsx (Form Component)
+// ============================================
 "use client";
 
 import {
@@ -29,19 +32,9 @@ const VideoForm: React.FC<VideoFormProps> = ({
   setFormData,
   setIsEditing,
 }) => {
-  console.log({
-    parentContentId,
-    videoContent,
-    formData,
-    isEditing,
-    handleChange,
-    setFormData,
-    setIsEditing,
-  });
-
   const content = videoContent?.data;
   const fullVideoUrl = content?.videoUrl?.startsWith("http")
-    ? videoContent?.videoUrl
+    ? content?.videoUrl
     : `https://${content?.videoUrl}`;
 
   const [addVideo, { isLoading: addVideoLoading }] = useCreateVideoMutation();
@@ -62,7 +55,6 @@ const VideoForm: React.FC<VideoFormProps> = ({
       const formDataToSend = new FormData();
 
       // Add video file
-      console.log("🚀 ~ onSubmit ~ formData:", formData);
       if (formData.video) {
         formDataToSend.append("video", formData.video);
       }
@@ -99,7 +91,8 @@ const VideoForm: React.FC<VideoFormProps> = ({
   };
 
   return (
-    <div className="w-1/3 p-6 rounded-lg">
+    <div className="w-full p-6 rounded-lg">
+      {/* Main Video Display */}
       <video
         src={fullVideoUrl}
         autoPlay
@@ -124,10 +117,21 @@ const VideoForm: React.FC<VideoFormProps> = ({
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
             required={!isEditing}
           />
-          {formData.url && (
-            <p className="text-sm text-gray-600 mt-1">
-              {/* Selected: {formData} */}
-            </p>
+
+          {/* Edit mode এ current video দেখান */}
+          {isEditing && formData.url && (
+            <div className="mt-2">
+              <p className="text-sm text-gray-600">Current video:</p>
+              <video
+                src={formData.url}
+                className="w-full max-w-xs rounded mt-1"
+                preload="metadata"
+                controls
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Upload a new video to replace
+              </p>
+            </div>
           )}
         </div>
 
@@ -168,14 +172,29 @@ const VideoForm: React.FC<VideoFormProps> = ({
           />
         </div>
 
-        <Button
-          htmlType="submit"
-          disabled={addVideoLoading || updateVideoLoading}
-          loading={addVideoLoading || updateVideoLoading}
-          className="!w-full !bg-brand-primary !text-white !py-2 !px-4 !rounded-lg hover:!bg-green-800 disabled:!opacity-50 disabled:cursor-not-allowed"
-        >
-          {isEditing ? "Update Video" : "Add Video"}
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            htmlType="submit"
+            disabled={addVideoLoading || updateVideoLoading}
+            loading={addVideoLoading || updateVideoLoading}
+            className="!flex-1 !bg-brand-primary !text-white !py-2 !px-4 !rounded-lg hover:!bg-green-800 disabled:!opacity-50"
+          >
+            {isEditing ? "Update Video" : "Add Video"}
+          </Button>
+
+          {isEditing && (
+            <Button
+              type="default"
+              onClick={() => {
+                setFormData({});
+                setIsEditing(false);
+              }}
+              className="!px-6"
+            >
+              Reset
+            </Button>
+          )}
+        </div>
       </form>
     </div>
   );

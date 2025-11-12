@@ -1,9 +1,9 @@
-import SingleWorkout from "@/app/_components/video-content/single-video/SingleWorkout";
+import VideoManager from "@/app/_components/video-content/single-video/SingleWorkout";
 
 const SingleWorkoutPage = () => {
   return (
     <div>
-      <SingleWorkout />
+      <VideoManager />
     </div>
   );
 };
