@@ -1,6 +1,9 @@
 "use client";
 
-import { useCurrentToken } from "@/redux/features/auth/authSlice";
+import {
+  selectCurrentUser,
+  useCurrentToken,
+} from "@/redux/features/auth/authSlice";
 import {
   useGetSupportCustomersQuery,
   useSendImageMutation,
@@ -46,13 +49,15 @@ interface Message {
 const CustomerSupportChat = () => {
   const { data: supportCustomers } = useGetSupportCustomersQuery(undefined);
 
+  const currentUser = useAppSelector(selectCurrentUser);
+
   // Local state for customers to update lastMessage
   const [customers, setCustomers] = useState<Customer[]>([]);
 
   const bearerToken = useAppSelector(useCurrentToken);
   const token = bearerToken?.split(" ")[1];
 
-  const myId = "68f5bbb8a6bcef7eb7748085"; // Your admin/support ID
+  const myId = currentUser?.id as string; // Your admin/support ID
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
@@ -100,7 +105,11 @@ const CustomerSupportChat = () => {
       return;
     }
 
-    socketRef.current = io("http://10.10.10.4:2000/chat", {
+    console.log(
+      "🚀 ~ CustomerSupportChat ~ process.env.NEXT_PUBLIC_SOCKET_URL:",
+      process.env.NEXT_PUBLIC_SOCKET_URL
+    );
+    socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
       extraHeaders: { token },
     });
 

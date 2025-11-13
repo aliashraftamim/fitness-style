@@ -11,21 +11,24 @@ import { IUser } from "../users/user.interface";
 
 const HeaderMenuDropdown = () => {
   const dispatch = useAppDispatch();
-  const currentUser: IUser | any = useAppSelector(selectCurrentUser);
-
-  const { data: user, isLoading } = useGetMeQuery(undefined);
-  console.log("🚀 ~ HeaderMenuDropdown ~ user:", user);
-
-  console.log(
-    "🚀 ~ HeaderMenuDropdown ~ currentUser:",
-    currentUser?.profileImage
-  );
-
-  const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close on outside click
+  const currentUser: IUser | null | any = useAppSelector(selectCurrentUser);
+
+  const { data: user, isLoading } = useGetMeQuery(undefined);
+
+  const [loggedInUser, setLoggedInUser] = useState<IUser | null>(null);
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Set logged in user when API data is fetched
+  useEffect(() => {
+    if (user?.data) {
+      setLoggedInUser(user.data);
+    }
+  }, [user]);
+
+  // Close dropdown on outside click
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -40,37 +43,37 @@ const HeaderMenuDropdown = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  const displayName =
+    loggedInUser?.firstName ?? currentUser?.firstName ?? "Admin";
+  const displayImage =
+    loggedInUser?.profileImage ??
+    currentUser?.profileImage ??
+    "https://res.cloudinary.com/dyalzfwd4/image/upload/v1738207704/user_wwrref.png";
+
   return (
-    <div ref={dropdownRef} className="relative inline-block text-left z-50 ">
+    <div ref={dropdownRef} className="relative inline-block text-left z-50">
       <button
+        aria-haspopup="true"
+        aria-expanded={isOpen}
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center gap-2  rounded-2xl border-2 px-4 py-2 transition bg-white shadow-sm hover:shadow-md"
+        className="flex items-center gap-2 rounded-2xl border-2 px-4 py-2 transition bg-white shadow-sm hover:shadow-md"
       >
-        <span className="font-semibold text-sm">
-          {!isLoading && user?.firstName
-            ? user.firstName
-            : currentUser?.firstName ?? "Admin"}
-        </span>
+        <span className="font-semibold text-sm">{displayName}</span>
         <Image
-          src={
-            !isLoading && user?.profileImage
-              ? user.profileImage
-              : currentUser?.profileImage ??
-                "https://res.cloudinary.com/dyalzfwd4/image/upload/v1738207704/user_wwrref.png"
-          }
+          src={displayImage}
           height={32}
           width={32}
           alt="Profile"
-          className="w-8 h-8 rounded-full  border-brand-primary object-cover "
+          className="w-8 h-8 rounded-full border-brand-primary object-cover"
         />
       </button>
 
       {isOpen && (
         <div className="absolute right-0 mt-2 w-48 bg-white border rounded-lg shadow-md">
-          <ul className="py-2 text-sm ">
+          <ul className="py-2 text-sm">
             <li>
               <Link
-                href="/settings"
+                href="/settings/personal-info"
                 className="block px-4 py-2 hover:bg-brand-primary"
               >
                 Profile

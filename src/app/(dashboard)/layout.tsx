@@ -1,7 +1,10 @@
 "use client";
 
+import { selectCurrentUser } from "@/redux/features/auth/authSlice";
+import { useAppSelector } from "@/redux/hooks";
 import { Button, Layout, theme } from "antd";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { IoIosMenu, IoMdClose } from "react-icons/io";
 import { RiNotification3Line } from "react-icons/ri";
@@ -15,9 +18,18 @@ const App: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mounted, setMounted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [hasNewNotification, setHasNewNotification] = useState(false); // Fix: Use state to trigger re-render
+  const router = useRouter();
+
+  const currentUser = useAppSelector(selectCurrentUser);
+
+  if (!currentUser) {
+    router.push("/login");
+    router.refresh();
+  }
 
   const handleModalOpen = async () => {
     setIsModalOpen(true);
+
     // await readAllNotification(undefined);
     // refetch();
     setHasNewNotification(false); // ✅ Reset badge after opening modal

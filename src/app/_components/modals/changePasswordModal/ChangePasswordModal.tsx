@@ -1,11 +1,11 @@
 "use client";
 
 import { useChangeMyPasswordMutation } from "@/redux/features/auth/authApi";
-import { logout } from "@/redux/features/auth/authSlice";
-import { useAppDispatch } from "@/redux/hooks";
+import { logout, selectCurrentUser } from "@/redux/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { Button, Input, Modal } from "antd";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, SubmitHandler, useForm } from "react-hook-form";
 import { HiOutlineArrowSmLeft } from "react-icons/hi";
 import { RiLock2Line } from "react-icons/ri";
@@ -18,12 +18,29 @@ interface IChangePassword {
   confirmPassword: string;
 }
 
-const ChangePasswordModal = ({ open, setOpen }: any) => {
-  const [isForgotPassword, setIsForgotPassword] = useState(false);
-  const mutation = useAppDispatch();
-  const [changePassword] = useChangeMyPasswordMutation();
+interface ChangePasswordModalProps {
+  open: boolean;
+  setOpen: (open: boolean) => void;
+}
 
+const ChangePasswordModal: React.FC<ChangePasswordModalProps> = ({
+  open,
+  setOpen,
+}) => {
+  const dispatch = useAppDispatch();
   const router = useRouter();
+
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+
+  const currentUser = useAppSelector(selectCurrentUser);
+
+  const [changePassword, { isLoading }] = useChangeMyPasswordMutation();
+
+  useEffect(() => {
+    if (!currentUser) {
+      router.push("/login");
+    }
+  }, [currentUser, router]);
 
   const {
     handleSubmit,
@@ -40,21 +57,23 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
       return;
     }
 
-    const res = await changePassword({
-      oldPassword,
-      newPassword,
-      confirmPassword,
-    }).unwrap();
+    try {
+      const res = await changePassword({
+        oldPassword,
+        newPassword,
+        confirmPassword: confirmPassword,
+      }).unwrap();
 
-    if (res.success) {
-      toast.success("Password changed successfully");
-      mutation(logout());
-      router.push("/login");
+      if (res.success) {
+        toast.success("Password changed successfully!");
+        dispatch(logout());
+        router.push("/login");
+      } else {
+        toast.error(res.message || "Failed to change password");
+      }
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Something went wrong!");
     }
-  };
-
-  const handleForgotPasswordToggle = () => {
-    setIsForgotPassword(true);
   };
 
   return (
@@ -66,35 +85,30 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
       onCancel={() => setOpen(false)}
       className="mt-32"
     >
-      {/* Change Password */}
       {!isForgotPassword ? (
         <div className="w-[484px] px-6 pb-6 py-10">
-          <span className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-4">
             <HiOutlineArrowSmLeft
               onClick={() => setOpen(false)}
               className="hover:cursor-pointer"
               size={30}
-            />{" "}
-            <h2 className="font-medium">Change Password</h2>
-          </span>
-          <p className="text-[#333333] mt-1">
-            Your password must be 6 characters long.
+            />
+            <h2 className="font-medium text-lg">Change Password</h2>
+          </div>
+          <p className="text-[#333333] text-sm mb-4">
+            Your password must be at least 6 characters long.
           </p>
+
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Old Password */}
-            <div className="mt-4">
-              <label className="block text-gray-600 mb-1">
-                Enter old password
-              </label>
+            <div className="mb-4">
+              <label className="block text-gray-600 mb-1">Old Password</label>
               <Controller
                 name="oldPassword"
                 control={control}
                 rules={{
                   required: "Old password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters long",
-                  },
+                  minLength: { value: 6, message: "Minimum 6 characters" },
                 }}
                 render={({ field }) => (
                   <Input.Password
@@ -114,19 +128,14 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
             </div>
 
             {/* New Password */}
-            <div className="mt-4">
-              <label className="block text-gray-600 mb-1">
-                Set new password
-              </label>
+            <div className="mb-4">
+              <label className="block text-gray-600 mb-1">New Password</label>
               <Controller
                 name="newPassword"
                 control={control}
                 rules={{
                   required: "New password is required",
-                  minLength: {
-                    value: 6,
-                    message: "Password must be at least 6 characters long",
-                  },
+                  minLength: { value: 6, message: "Minimum 6 characters" },
                 }}
                 render={({ field }) => (
                   <Input.Password
@@ -146,9 +155,9 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
             </div>
 
             {/* Confirm Password */}
-            <div className="mt-4">
+            <div className="mb-4">
               <label className="block text-gray-600 mb-1">
-                Re-enter new password
+                Confirm New Password
               </label>
               <Controller
                 name="confirmPassword"
@@ -175,19 +184,13 @@ const ChangePasswordModal = ({ open, setOpen }: any) => {
               )}
             </div>
 
-            {/* <span
-              onClick={handleForgotPasswordToggle}
-              className="text-green-600 text-sm mt-3 inline-block hover:cursor-pointer"
-            >
-              Forgot password?
-            </span> */}
-
             <Button
               type="primary"
+              loading={isLoading}
               className="w-full !bg-brand-primary !py-5 !mt-5 text-white font-semibold"
               htmlType="submit"
             >
-              Update password
+              Update Password
             </Button>
           </form>
         </div>

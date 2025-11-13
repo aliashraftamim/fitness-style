@@ -59,12 +59,20 @@ export const sidebarMenuItems = [
   {
     key: "/customer-support",
     icon: <BiSupport size={22} />,
-    label: <Link href="/customer-support">Customer Support</Link>,
+    label: (
+      <Link href="/customer-support" legacyBehavior>
+        <a>Customer Support</a>
+      </Link>
+    ),
   },
   {
     key: "/settings",
     icon: <IoSettingsOutline size={22} />,
-    label: <Link href="/settings">Settings</Link>,
+    label: (
+      <Link href="/settings">
+        <a>Settings</a>
+      </Link>
+    ),
   },
   {
     key: "/logout",

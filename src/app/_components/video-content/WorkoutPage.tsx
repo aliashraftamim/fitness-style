@@ -239,7 +239,7 @@ const WorkoutPage = () => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onAdd={function (plan: IWorkoutPlan): void {
-          throw new Error("Function not implemented.");
+          return;
         }}
       />
     </div>
