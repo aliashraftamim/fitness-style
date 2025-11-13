@@ -13,6 +13,7 @@ interface Customer {
   lastMessage: string;
   createdAt: string;
   updatedAt: string;
+  hasUnreadMessage?: boolean;
 }
 
 interface Props {
@@ -40,11 +41,6 @@ const CustomerList = ({
     customer.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  console.log(
-    "getInitials(customer.email):",
-    getInitials(filteredCustomers[0]?.email)
-  );
-
   return (
     <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
       <div className="p-4 border-b border-gray-200">
@@ -68,7 +64,7 @@ const CustomerList = ({
             onClick={() => setSelectedCustomer(customer)}
             className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
               selectedCustomer?._id === customer._id ? "bg-indigo-50" : ""
-            }`}
+            } ${customer.hasUnreadMessage ? "bg-blue-50" : ""}`}
           >
             <div className="flex items-center space-x-3">
               <div className="relative">
@@ -80,25 +76,43 @@ const CustomerList = ({
                   />
                 ) : (
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                    {getInitials(customer.email)}ali_test
+                    {getInitials(customer.email)}
                   </div>
                 )}
+
                 {customer.isOnline && (
                   <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-800 truncate">
-                    {getUserName(customer.email)}
+                  <h3
+                    className={`truncate ${
+                      customer.hasUnreadMessage
+                        ? "font-bold text-gray-900"
+                        : "font-semibold text-gray-800"
+                    }`}
+                  >
+                    {customer.partnerName}
                   </h3>
                   <span className="text-xs text-gray-500">
                     {getTimeAgo(customer.updatedAt)}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 truncate">
-                  {customer.lastMessage}
-                </p>
+                <div className="flex items-center justify-between">
+                  <p
+                    className={`text-sm truncate ${
+                      customer.hasUnreadMessage
+                        ? "font-semibold text-gray-900"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {customer.lastMessage}
+                  </p>
+                  {customer.hasUnreadMessage && (
+                    <div className="w-2 h-2 bg-indigo-600 rounded-full ml-2 flex-shrink-0"></div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

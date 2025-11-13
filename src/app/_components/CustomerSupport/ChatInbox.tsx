@@ -1,11 +1,14 @@
 "use client";
 
 import { useGetACustomerChatQuery } from "@/redux/features/chat/chat.api";
-import { PhoneFilled, RobotFilled, SendOutlined } from "@ant-design/icons";
-import { useEffect } from "react";
+import { PhoneFilled, RobotFilled } from "@ant-design/icons";
+import { useEffect, useRef, useState } from "react";
+import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { BiImage, BiVideo } from "react-icons/bi";
+import { BsSendArrowUp } from "react-icons/bs";
 import { HiPaperClip } from "react-icons/hi";
-import { MdBorderVertical } from "react-icons/md";
+import { IoChevronBack, IoChevronForward } from "react-icons/io5";
+import { MdBorderVertical, MdClose } from "react-icons/md";
 
 interface SenderRecipient {
   _id: string;
@@ -46,6 +49,10 @@ interface Props {
   getInitials: (email: string) => string;
   isTyping: boolean;
   myId: string;
+
+  imagePreview: string | null;
+  handleRemoveImage: () => void;
+  isLoading: boolean;
 }
 
 const ChatInbox = ({
@@ -62,15 +69,71 @@ const ChatInbox = ({
   getInitials,
   isTyping,
   myId,
+  imagePreview,
+  handleRemoveImage,
+  isLoading,
 }: Props) => {
-  const { data: customerChat } = useGetACustomerChatQuery(selectedCustomer._id);
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [allLoadedMessages, setAllLoadedMessages] = useState<Message[]>([]);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  // Get API messages
-  const apiMessages: Message[] = customerChat?.data || [];
+  const { data: customerChat, isFetching } = useGetACustomerChatQuery({
+    id: selectedCustomer._id,
+    query: { limit: 20, page },
+  });
+
+  // Image viewer state
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [allImages, setAllImages] = useState<string[]>([]);
+
+  // Track if user is at bottom
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const prevMessageCountRef = useRef(0);
+  const prevScrollHeight = useRef(0);
+  const isInitialLoad = useRef(true);
+
+  // Load messages from API
+  useEffect(() => {
+    if (customerChat?.data) {
+      const newMessages = customerChat.data;
+
+      // Check if there are more messages to load
+      if (newMessages.length < 20) {
+        setHasMore(false);
+      }
+
+      setAllLoadedMessages((prev) => {
+        // Remove duplicates and merge
+        const combined = [...newMessages, ...prev];
+        const unique = combined.reduce((acc: Message[], current: Message) => {
+          const exists = acc.find((msg) => msg._id === current._id);
+          if (!exists) {
+            acc.push(current);
+          }
+          return acc;
+        }, []);
+        return unique;
+      });
+
+      setIsLoadingMore(false);
+    }
+  }, [customerChat]);
+
+  // Reset pagination when customer changes
+  useEffect(() => {
+    setPage(1);
+    setAllLoadedMessages([]);
+    setHasMore(true);
+    isInitialLoad.current = true;
+    prevScrollHeight.current = 0;
+  }, [selectedCustomer._id]);
 
   // Combine API messages with realtime messages
-  // Remove duplicates based on _id
-  const allMessages = [...apiMessages, ...realtimeMessages].reduce(
+  const allMessages = [...allLoadedMessages, ...realtimeMessages].reduce(
     (acc: Message[], current: Message) => {
       const exists = acc.find((msg) => msg._id === current._id);
       if (!exists) {
@@ -86,10 +149,128 @@ const ChatInbox = ({
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 
-  // Auto scroll to bottom when new messages arrive
+  // Check if user is at bottom of scroll
+  const checkIfAtBottom = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return true;
+
+    const threshold = 100;
+    const isBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight <
+      threshold;
+    setIsAtBottom(isBottom);
+  };
+
+  // Handle scroll event with pagination
+  const handleScroll = () => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    checkIfAtBottom();
+
+    // Check if scrolled to top
+    if (container.scrollTop < 100 && hasMore && !isLoadingMore && !isFetching) {
+      setIsLoadingMore(true);
+      prevScrollHeight.current = container.scrollHeight;
+      setPage((prev) => prev + 1);
+    }
+  };
+
+  // Maintain scroll position after loading more messages
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container || isInitialLoad.current) return;
+
+    if (prevScrollHeight.current > 0) {
+      const newScrollHeight = container.scrollHeight;
+      const scrollDiff = newScrollHeight - prevScrollHeight.current;
+      container.scrollTop = scrollDiff;
+      prevScrollHeight.current = 0;
+    }
   }, [sortedMessages]);
+
+  // Auto scroll only when:
+  // 1. New message arrives AND user is at bottom
+  // 2. OR when selected customer changes (initial load)
+  useEffect(() => {
+    const messageCount = sortedMessages.length;
+    const isNewMessage = messageCount > prevMessageCountRef.current;
+    prevMessageCountRef.current = messageCount;
+
+    if (isInitialLoad.current) {
+      // Scroll to bottom on initial load
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+        isInitialLoad.current = false;
+      }, 100);
+    } else if (isNewMessage && isAtBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [sortedMessages, isAtBottom]);
+
+  // Scroll to bottom when customer changes
+  useEffect(() => {
+    isInitialLoad.current = true;
+    setIsAtBottom(true);
+    prevMessageCountRef.current = sortedMessages.length;
+  }, [selectedCustomer._id]);
+
+  // Collect all images from messages
+  useEffect(() => {
+    const images: string[] = [];
+    sortedMessages.forEach((msg) => {
+      if (msg.attachments?.length > 0) {
+        images.push(...msg.attachments);
+      }
+    });
+    setAllImages(images);
+  }, [sortedMessages]);
+
+  // Handle image click
+  const handleImageClick = (imageUrl: string) => {
+    const index = allImages.indexOf(imageUrl);
+    setCurrentImageIndex(index);
+    setSelectedImage(imageUrl);
+  };
+
+  // Navigate to previous image
+  const handlePrevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(currentImageIndex - 1);
+      setSelectedImage(allImages[currentImageIndex - 1]);
+    }
+  };
+
+  // Navigate to next image
+  const handleNextImage = () => {
+    if (currentImageIndex < allImages.length - 1) {
+      setCurrentImageIndex(currentImageIndex + 1);
+      setSelectedImage(allImages[currentImageIndex + 1]);
+    }
+  };
+
+  // Close image viewer
+  const closeImageViewer = () => {
+    setSelectedImage(null);
+  };
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!selectedImage) return;
+
+      if (e.key === "Escape") {
+        closeImageViewer();
+      } else if (e.key === "ArrowLeft") {
+        handlePrevImage();
+      } else if (e.key === "ArrowRight") {
+        handleNextImage();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedImage, currentImageIndex]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -136,7 +317,30 @@ const ChatInbox = ({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 px-6 py-4 space-y-4 bg-gray-50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent max-h-[calc(100vh-300px)]">
+      <div
+        ref={messagesContainerRef}
+        onScroll={handleScroll}
+        className="flex-1 px-6 py-4 space-y-4 bg-gray-50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent max-h-[calc(100vh-300px)]"
+      >
+        {/* Loading indicator at top */}
+        {isLoadingMore && (
+          <div className="flex justify-center py-4">
+            <div className="flex items-center space-x-2 text-indigo-600">
+              <AiOutlineLoading3Quarters className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">Loading messages...</span>
+            </div>
+          </div>
+        )}
+
+        {/* No more messages indicator */}
+        {!hasMore && sortedMessages.length > 0 && (
+          <div className="flex justify-center py-4">
+            <div className="bg-gray-200 text-gray-600 text-xs px-4 py-2 rounded-full">
+              No more messages
+            </div>
+          </div>
+        )}
+
         {sortedMessages.map((msg) => {
           const isUser = msg.senderId?._id === myId;
 
@@ -179,7 +383,8 @@ const ChatInbox = ({
                           key={i}
                           src={img}
                           alt="attachment"
-                          className="w-40 h-40 object-cover rounded-lg shadow-sm"
+                          className="w-40 h-40 object-cover rounded-lg shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+                          onClick={() => handleImageClick(img)}
                         />
                       ))}
                     </div>
@@ -238,8 +443,37 @@ const ChatInbox = ({
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Scroll to Bottom Button */}
+      {!isAtBottom && (
+        <button
+          onClick={() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            setIsAtBottom(true);
+          }}
+          className="absolute bottom-24 right-8 w-10 h-10 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center shadow-lg !text-white z-10"
+        >
+          ↓
+        </button>
+      )}
+
       {/* Input */}
-      <div className="bg-white border-t border-gray-200 px-6 py-4">
+      <div className="bg-white border-t border-gray-200 px-6 py-4 relative">
+        {imagePreview && (
+          <div className="absolute bottom-16 inline-block mr-2">
+            <img
+              src={imagePreview}
+              alt="Preview"
+              className="h-20 w-20 object-cover rounded-lg border-2 border-blue-500"
+            />
+            <button
+              onClick={handleRemoveImage}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <div className="flex items-center space-x-3">
           <input
             type="file"
@@ -272,10 +506,63 @@ const ChatInbox = ({
             onClick={handleSendMessage}
             className="w-12 h-12 bg-indigo-600 hover:bg-indigo-700 rounded-full flex items-center justify-center shadow-lg"
           >
-            <SendOutlined className="w-5 h-5 text-white" />
+            <BsSendArrowUp className="w-5 h-5 !text-white" />
           </button>
         </div>
       </div>
+
+      {/* Image Viewer Modal */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center"
+          onClick={closeImageViewer}
+        >
+          <div
+            className="relative max-w-7xl max-h-full p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Button */}
+            <button
+              onClick={closeImageViewer}
+              className="absolute top-4 right-4 w-10 h-10 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white transition-all z-10"
+            >
+              <MdClose className="w-6 h-6" />
+            </button>
+
+            {/* Image Counter */}
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm">
+              {currentImageIndex + 1} / {allImages.length}
+            </div>
+
+            {/* Previous Button */}
+            {currentImageIndex > 0 && (
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white transition-all"
+              >
+                <IoChevronBack className="w-7 h-7" />
+              </button>
+            )}
+
+            {/* Next Button */}
+            {currentImageIndex < allImages.length - 1 && (
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full flex items-center justify-center text-white transition-all"
+              >
+                <IoChevronForward className="w-7 h-7" />
+              </button>
+            )}
+
+            {/* Image */}
+            <img
+              src={selectedImage}
+              alt="Full size"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -4,9 +4,10 @@ import { useRef } from "react";
 
 type OtpInputGroupProps = {
   length?: number;
+  onChange?: (otp: string) => void;
 };
 
-export const OtpInputGroup = ({ length = 4 }: OtpInputGroupProps) => {
+export const OtpInputGroup = ({ length = 4, onChange }: OtpInputGroupProps) => {
   const inputsRef = useRef<Array<HTMLInputElement | null>>([]);
 
   const handleChange = (
@@ -21,18 +22,9 @@ export const OtpInputGroup = ({ length = 4 }: OtpInputGroupProps) => {
       }
     }
 
-    if (value.length > 1) {
-      const values = value.split("").slice(0, length);
-      values.forEach((val, idx) => {
-        if (inputsRef.current[index + idx]) {
-          inputsRef.current[index + idx]!.value = val;
-        }
-      });
-
-      if (inputsRef.current[index + values.length - 1]) {
-        inputsRef.current[index + values.length - 1]?.focus();
-      }
-    }
+    // 🔹 Collect full OTP and send to parent
+    const otp = inputsRef.current.map((input) => input?.value || "").join("");
+    onChange?.(otp);
   };
 
   const handleKeyDown = (
@@ -41,7 +33,6 @@ export const OtpInputGroup = ({ length = 4 }: OtpInputGroupProps) => {
   ) => {
     if (e.key === "Backspace") {
       const currentInput = inputsRef.current[index];
-
       if (currentInput?.value === "") {
         if (index > 0) {
           inputsRef.current[index - 1]?.focus();

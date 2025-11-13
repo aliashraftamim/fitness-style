@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { Button } from "../ui/Button";
 import { Checkbox } from "../ui/CheckBox";
 import { Input } from "../ui/Input";
@@ -16,14 +17,14 @@ type Field = {
 
 type AuthFormProps = {
   imageLink: string;
-  fields?: Field[]; // ✅ Now optional
+  fields?: Field[];
   buttonLabel: string;
   onSubmit: (values: Record<string, string | boolean>) => void;
   showRemember?: boolean;
   showForgotLink?: boolean;
   heading: string;
   description: string;
-  extraContent?: React.ReactNode; // ✅ Should also be optional ideally
+  extraContent?: React.ReactNode;
   btnLink?: string;
 };
 
@@ -45,15 +46,25 @@ export const AuthForm = ({
   const [formValues, setFormValues] =
     useState<Record<string, string | boolean>>(initialValues);
   const [remember, setRemember] = useState(false);
+  const [showPasswordFields, setShowPasswordFields] = useState<
+    Record<string, boolean>
+  >({});
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormValues({ ...formValues, [e.target.name]: e.target.value });
   };
 
+  const togglePasswordVisibility = (name: string) => {
+    setShowPasswordFields((prev) => ({ ...prev, [name]: !prev[name] }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit({ ...formValues, remember });
-    console.log("🚀 ~ handleSubmit ~ formValues:", formValues);
+    if (showRemember) {
+      onSubmit({ ...formValues, remember });
+    } else {
+      onSubmit(formValues);
+    }
   };
 
   return (
@@ -71,7 +82,7 @@ export const AuthForm = ({
         </div>
 
         {/* Right Login Form */}
-        <div className="p-10 flex flex-col justify-evenly items-center  h-[90%]">
+        <div className="p-10 flex flex-col justify-evenly items-center h-[90%]">
           <div className="flex justify-center mb-6 p-5 bg-zinc-200 size-[200px] mx-auto rounded-full">
             <Image
               src="/images/auth/logo.png"
@@ -91,20 +102,39 @@ export const AuthForm = ({
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4 w-full">
-              {/* ✅ Only map fields if they exist */}
               {fields?.map((field) => (
                 <div key={field.name}>
                   <label className="text-zinc-950 text-sm font-medium">
                     {field.label}
                   </label>
-                  <Input
-                    type={field.type}
-                    name={field.name}
-                    placeholder={field.placeholder}
-                    value={String(formValues[field.name] || "")}
-                    onChange={handleChange}
-                    className="mt-1 text-zinc-700"
-                  />
+                  <div className="relative mt-1">
+                    <Input
+                      type={
+                        field.type === "password" &&
+                        showPasswordFields[field.name]
+                          ? "text"
+                          : field.type
+                      }
+                      name={field.name}
+                      placeholder={field.placeholder}
+                      value={String(formValues[field.name] || "")}
+                      onChange={handleChange}
+                      className="text-zinc-700 w-full pr-10"
+                    />
+                    {field.type === "password" && (
+                      <button
+                        type="button"
+                        onClick={() => togglePasswordVisibility(field.name)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-700"
+                      >
+                        {showPasswordFields[field.name] ? (
+                          <AiOutlineEyeInvisible size={20} />
+                        ) : (
+                          <AiOutlineEye size={20} />
+                        )}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
 
@@ -130,7 +160,6 @@ export const AuthForm = ({
                 </div>
               )}
 
-              {/* Optional extra content */}
               {extraContent && <div className="mt-4">{extraContent}</div>}
               {btnLink ? (
                 <Link href={btnLink}>
@@ -138,15 +167,15 @@ export const AuthForm = ({
                     type="submit"
                     className="w-full text-white py-2 bg-gradient-to-tl from-[#002B14] via-[#4F7E65] to-[#002B14] hover:from-[#4F7E65] hover:via-[#002B14] hover:to-[#4F7E65]"
                   >
-                    <span> {buttonLabel}</span>
+                    {buttonLabel}
                   </Button>
                 </Link>
               ) : (
                 <Button
                   type="submit"
-                  className="w-full text-white py-2 bg-gradient-to-tl from-[#002B14] via-[#4F7E65] to-[#002B14] hover:from-[#4F7E65] hover:via-[#002B14] hover:to-[#4F7E65]"
+                  className="w-full !text-white py-2 bg-gradient-to-tl from-[#002B14] via-[#4F7E65] to-[#002B14] hover:from-[#4F7E65] hover:via-[#002B14] hover:to-[#4F7E65]"
                 >
-                  <span> {buttonLabel}</span>
+                  {buttonLabel}
                 </Button>
               )}
             </form>

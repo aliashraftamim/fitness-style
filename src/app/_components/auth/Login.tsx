@@ -1,8 +1,9 @@
 "user client";
 
+import { useGetMeQuery } from "@/redux/features/admin/admin.api";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
-import { selectCurrentUser, setUser } from "@/redux/features/auth/authSlice";
-import { useAppDispatch, useAppSelector } from "@/redux/hooks";
+import { setUser } from "@/redux/features/auth/authSlice";
+import { useAppDispatch } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AuthForm } from "./AuthForm";
@@ -12,8 +13,11 @@ const Login = () => {
   const dispatch = useAppDispatch();
   const router = useRouter();
 
-  const currentUser = useAppSelector(selectCurrentUser);
+  const { data: currentUser } = useGetMeQuery(undefined);
   console.log("🚀 ~ Login ~ currentUser:", currentUser);
+
+  const me = currentUser?.data?.user;
+  console.log("🚀 ~ Login ~ me:", me);
 
   if (currentUser) {
     router.push("/");

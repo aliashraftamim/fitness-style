@@ -2,6 +2,7 @@ import ReduxProvider from "@/provider/reduxProvider";
 import "antd/dist/reset.css"; // Modern CSS reset for Ant Design v5
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -29,6 +30,7 @@ export default function MainLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <Toaster position="top-right" />
         <ReduxProvider>{children}</ReduxProvider>
       </body>
     </html>

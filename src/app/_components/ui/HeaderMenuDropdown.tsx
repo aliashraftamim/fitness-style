@@ -1,14 +1,25 @@
 "use client";
 
-import { logout } from "@/redux/features/auth/authSlice";
-import { useAppDispatch } from "@/redux/hooks";
+import { useGetMeQuery } from "@/redux/features/admin/admin.api";
+import { logout, selectCurrentUser } from "@/redux/features/auth/authSlice";
+import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { IUser } from "../users/user.interface";
 
 const HeaderMenuDropdown = () => {
   const dispatch = useAppDispatch();
+  const currentUser: IUser | any = useAppSelector(selectCurrentUser);
+
+  const { data: user, isLoading } = useGetMeQuery(undefined);
+  console.log("🚀 ~ HeaderMenuDropdown ~ user:", user);
+
+  console.log(
+    "🚀 ~ HeaderMenuDropdown ~ currentUser:",
+    currentUser?.profileImage
+  );
 
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -35,9 +46,18 @@ const HeaderMenuDropdown = () => {
         onClick={() => setIsOpen((prev) => !prev)}
         className="flex items-center gap-2  rounded-2xl border-2 px-4 py-2 transition bg-white shadow-sm hover:shadow-md"
       >
-        <span className="font-semibold text-sm">Super Admin</span>
+        <span className="font-semibold text-sm">
+          {!isLoading && user?.firstName
+            ? user.firstName
+            : currentUser?.firstName ?? "Admin"}
+        </span>
         <Image
-          src="https://res.cloudinary.com/dyalzfwd4/image/upload/v1738207704/user_wwrref.png"
+          src={
+            !isLoading && user?.profileImage
+              ? user.profileImage
+              : currentUser?.profileImage ??
+                "https://res.cloudinary.com/dyalzfwd4/image/upload/v1738207704/user_wwrref.png"
+          }
           height={32}
           width={32}
           alt="Profile"

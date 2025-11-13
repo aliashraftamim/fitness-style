@@ -10,13 +10,25 @@ const chatApi = baseApi.injectEndpoints({
     }),
 
     getACustomerChat: builder.query({
-      query: (id: string) => ({
-        url: `/chatting/private/${id}`,
+      query: (payload: { id: string; query: Record<string, any> }) => ({
+        url: `/chatting/private/${payload.id}`,
         method: "GET",
+        params: payload.query,
+      }),
+    }),
+
+    sendImage: builder.mutation({
+      query: (payload: { id: string; data: FormData }) => ({
+        url: `/chatting/send-files-to-customer/${payload.id}`,
+        method: "PATCH",
+        body: payload.data,
       }),
     }),
   }),
 });
 
-export const { useGetSupportCustomersQuery, useGetACustomerChatQuery } =
-  chatApi;
+export const {
+  useGetSupportCustomersQuery,
+  useGetACustomerChatQuery,
+  useSendImageMutation,
+} = chatApi;

@@ -51,18 +51,6 @@ const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["users"],
     }),
-
-    // updateMe: builder.mutation({
-    //   query: (payload) => {
-    //     console.log("🚀 ~ payload:", payload);
-    //     return {
-    //       url: "/user/update-me",
-    //       method: "PUT",
-    //       body: payload,
-    //     };
-    //   },
-    //   invalidatesTags: ["profileInfo"],
-    // }),
   }),
 });
 

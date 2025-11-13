@@ -22,12 +22,12 @@ const authApi = baseApi.injectEndpoints({
 
     verifyResetOTP: builder.mutation({
       query: (payload: { otp: string; resetToken: string }) => ({
-        url: "/auth/verify-otp",
-        method: "PATCH",
+        url: "/auth/verify-otp-for-forgot-password",
+        method: "POST",
         body: { otp: payload?.otp },
         headers: {
           "Content-Type": "application/json",
-          Authorization: payload.resetToken,
+          token: payload.resetToken,
         },
       }),
     }),
@@ -39,14 +39,14 @@ const authApi = baseApi.injectEndpoints({
         confirmPassword: string;
       }) => ({
         url: "/auth/reset-password",
-        method: "PATCH",
+        method: "POST",
         body: {
           newPassword: payload?.newPassword,
           confirmPassword: payload?.confirmPassword,
         },
         headers: {
           "Content-Type": "application/json",
-          Authorization: payload.resetToken,
+          token: payload.resetToken,
         },
       }),
     }),
