@@ -97,7 +97,7 @@ const User: React.FC = () => {
     },
     {
       title: "Full Name",
-      dataIndex: "name",
+      dataIndex: "firstName",
       width: "20%",
       align: "start",
       render: (text, record) => (

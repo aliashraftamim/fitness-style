@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BiLogOut } from "react-icons/bi";
+import { BiSupport } from "react-icons/bi";
 import { CiBadgeDollar } from "react-icons/ci";
 import { FaUserShield } from "react-icons/fa6";
 import { IoSettingsOutline, IoVideocamOutline } from "react-icons/io5";
@@ -9,7 +9,7 @@ import { LiaAwardSolid } from "react-icons/lia";
 import { MdOutlineSubscriptions } from "react-icons/md";
 import { RiBarChart2Line } from "react-icons/ri";
 import { TbLayoutDashboardFilled } from "react-icons/tb";
-
+import LogoutMenuItem from "../MAIN/logout-component/Logout";
 
 export const sidebarMenuItems = [
   {
@@ -55,6 +55,12 @@ export const sidebarMenuItems = [
     icon: <IoVideocamOutline size={22} />,
     label: <Link href="/video-content">Video Content</Link>,
   },
+
+  {
+    key: "/customer-support",
+    icon: <BiSupport size={22} />,
+    label: <Link href="/customer-support">Customer Support</Link>,
+  },
   {
     key: "/settings",
     icon: <IoSettingsOutline size={22} />,
@@ -62,14 +68,10 @@ export const sidebarMenuItems = [
   },
   {
     key: "/logout",
-    icon: (
-      <span className="text-red-600">
-        <BiLogOut color="red" size={22} />
-      </span>
-    ),
     label: (
       <div onClick={() => {}}>
-        <span className="text-red-500">Logout</span>
+        {/* <span className="text-red-500">Logouts</span> */}
+        <LogoutMenuItem />
       </div>
     ),
   },
