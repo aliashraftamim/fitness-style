@@ -16,7 +16,6 @@ const Login = () => {
   const currentUser = useAppSelector(selectCurrentUser);
 
   const { fcmToken } = useFcmToken();
-  console.log("🚀 ~ Login ~ fcmToken:", fcmToken);
 
   useEffect(() => {
     if (currentUser) {
@@ -26,13 +25,16 @@ const Login = () => {
   }, [currentUser, router]);
 
   const handleLogin = async (values: Record<string, string | boolean>) => {
-    try {
-      const res = await login({
-        email: values.email as string,
-        password: values.password as string,
-      }).unwrap();
+    const loginPayload: any = {
+      email: values.email as string,
+      password: values.password as string,
+    };
 
-      console.log("🚀 ~ handleLogin ~ res:", res);
+    if (fcmToken) {
+      loginPayload.fcmToken = fcmToken;
+    }
+    try {
+      const res = await login(loginPayload).unwrap();
 
       if (res?.success) {
         dispatch(

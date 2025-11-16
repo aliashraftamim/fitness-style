@@ -5,7 +5,7 @@ import {
   useGetAllUsersQuery,
   useUnblockUserMutation,
 } from "@/redux/features/admin/users.api";
-import { EyeOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined } from "@ant-design/icons";
 import type { TableColumnsType, TablePaginationConfig } from "antd";
 import { Avatar, Modal, Space, Table, Tag, Tooltip } from "antd";
 import React, { useState } from "react";
@@ -14,12 +14,14 @@ import { MdLockOpen } from "react-icons/md";
 import { toast } from "sonner";
 import Loading from "../MAIN/loading/Loading";
 import { IUser, USER_STATUS } from "./user.interface";
+import { HandleUserSubscription } from "./UserSubscriptionHandleModal";
 
 const User: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [blockModalVisible, setBlockModalVisible] = useState(false);
   const [unblockModalVisible, setUnblockModalVisible] = useState(false);
+  const [subsModalVisible, setSubsModalVisible] = useState(false);
   const [actionUser, setActionUser] = useState<IUser | null>(null);
   const [blockUser, { isLoading: isBlocking }] = useBlockUserMutation();
   const [unblockUser, { isLoading: isUnblocking }] = useUnblockUserMutation();
@@ -50,6 +52,11 @@ const User: React.FC = () => {
   const handleBlockUser = (user: IUser) => {
     setActionUser(user);
     setBlockModalVisible(true);
+  };
+
+  const subsHandleModal = (user: IUser) => {
+    setActionUser(user);
+    setSubsModalVisible(true);
   };
 
   const handleUnblockUser = (user: IUser) => {
@@ -87,14 +94,15 @@ const User: React.FC = () => {
     setCurrentPage(pagination.current || 1);
     setPageSize(pagination.pageSize || 10);
   };
-
   const columns: TableColumnsType<IUser> = [
     {
       title: "Serial",
       dataIndex: "serial",
-      width: "10%",
+      width: "5%",
       align: "center",
-      render: (text) => <span className="pl-4">{text}</span>,
+      render: (_text, _record, index) => (
+        <span className="pl-2">{index + 1}</span>
+      ),
     },
     {
       title: "Full Name",
@@ -120,7 +128,7 @@ const User: React.FC = () => {
     {
       title: "Phone Number",
       dataIndex: "contactNumber",
-      width: "20%",
+      width: "15%",
       align: "start",
     },
     {
@@ -129,7 +137,7 @@ const User: React.FC = () => {
       width: "10%",
       align: "start",
       render: (payment) => (
-        <span className="pl-4">
+        <span className="pl-2">
           {payment?.tiersId?.name || payment?.tiersName || "N/A"}
         </span>
       ),
@@ -139,14 +147,11 @@ const User: React.FC = () => {
       dataIndex: "status",
       width: "10%",
       align: "center",
-      render: (status: keyof typeof USER_STATUS) => {
-        console.log("🚀 ~ User ~ status:", status);
-        return (
-          <Tag color={status === USER_STATUS.BLOCKED ? "red" : "green"}>
-            {status === USER_STATUS.BLOCKED ? "Blocked" : "Active"}
-          </Tag>
-        );
-      },
+      render: (status: keyof typeof USER_STATUS) => (
+        <Tag color={status === USER_STATUS.BLOCKED ? "red" : "green"}>
+          {status === USER_STATUS.BLOCKED ? "Blocked" : "Active"}
+        </Tag>
+      ),
     },
     {
       title: "Date",
@@ -158,7 +163,7 @@ const User: React.FC = () => {
     {
       title: "Action",
       dataIndex: "action",
-      width: "10%",
+      width: "15%",
       align: "center",
       render: (_, record) => (
         <div className="flex items-center justify-center space-x-2">
@@ -185,6 +190,13 @@ const User: React.FC = () => {
               />
             </Tooltip>
           )}
+          <Tooltip title="Make User Free Access">
+            <EditOutlined
+              color="red"
+              className="text-lg cursor-pointer"
+              onClick={() => subsHandleModal(record)}
+            />
+          </Tooltip>
         </div>
       ),
     },
@@ -323,6 +335,20 @@ const User: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/*User Subscription Handle Modal */}
+      <HandleUserSubscription
+        visible={subsModalVisible}
+        user={actionUser as any}
+        onCancel={() => {
+          setSubsModalVisible(false);
+          setActionUser(null);
+        }}
+        loading={isUnblocking}
+        actionUser={actionUser as any}
+        setActionUser={setActionUser as any}
+        setSubsModalVisible={setSubsModalVisible}
+      />
     </div>
   );
 };

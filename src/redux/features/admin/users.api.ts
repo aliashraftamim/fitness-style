@@ -4,14 +4,6 @@ import { baseApi } from "@/redux/api/baseApi";
 
 const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getMe: builder.query({
-      query: () => ({
-        url: "/user/get-me",
-        method: "GET",
-      }),
-      providesTags: ["profileInfo"],
-    }),
-
     getAllUsers: builder.query({
       query: (params: Record<string, any> = {}) => {
         const queryString = new URLSearchParams(params).toString();
@@ -51,6 +43,15 @@ const userApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["users"],
     }),
+
+    updateUser: builder.mutation({
+      query: (payload) => ({
+        url: `/user/update-user/${payload.id}`,
+        method: "PUT",
+        body: payload.data,
+      }),
+      invalidatesTags: ["users"],
+    }),
   }),
 });
 
@@ -60,7 +61,7 @@ export const {
   useBlockUserMutation,
   useUnblockUserMutation,
 
-  useGetMeQuery,
+  useUpdateUserMutation,
 } = userApi;
 
 export default userApi;

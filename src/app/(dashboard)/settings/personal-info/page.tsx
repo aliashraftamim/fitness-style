@@ -97,7 +97,8 @@ const PersonalInfoPage = () => {
       const formData = new FormData();
       formData.append("data", JSON.stringify(payload));
 
-      await updateMe(formData).unwrap();
+      const response = await updateMe(formData).unwrap();
+      console.log("🚀 ~ onSubmit ~ response:", response);
       toast.success("Info updated successfully!");
       refetch();
       setIsDisabled(true);

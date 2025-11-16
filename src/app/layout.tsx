@@ -1,19 +1,6 @@
-import ReduxProvider from "@/provider/reduxProvider";
-import "antd/dist/reset.css"; // Modern CSS reset for Ant Design v5
+// src/app/layout.tsx (Server Component)
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Toaster } from "sonner";
-import "./globals.css";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+import ReduxLayoutWrapper from "./_components/LAYOUT/ReduxLayout";
 
 export const metadata: Metadata = {
   title: "Fitness Style",
@@ -22,17 +9,8 @@ export const metadata: Metadata = {
 
 export default function MainLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <Toaster position="top-center" />
-        <ReduxProvider>{children}</ReduxProvider>
-      </body>
-    </html>
-  );
+}) {
+  return <ReduxLayoutWrapper>{children}</ReduxLayoutWrapper>;
 }

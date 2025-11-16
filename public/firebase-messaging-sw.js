@@ -18,14 +18,18 @@ const firebaseConfig = {
 // eslint-disable-next-line no-undef
 firebase.initializeApp(firebaseConfig);
 // eslint-disable-next-line no-undef
+
+
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-
-  const notificationTitle = payload.notification.title;
+  console.log('Background message received:', payload);
+  
+  const notificationTitle = payload.notification?.title || 'Notification';
   const notificationOptions = {
-    body: payload.notification.body,
-    icon: './logo2.png',
+    body: payload.notification?.body || '',
+    icon: '/firebase-logo.png' // আপনার icon path
   };
+
   self.registration.showNotification(notificationTitle, notificationOptions);
 });

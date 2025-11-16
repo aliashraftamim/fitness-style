@@ -1,5 +1,6 @@
 "use client";
 
+import { useGetMeQuery } from "@/redux/features/admin/admin.api";
 import { selectCurrentUser } from "@/redux/features/auth/authSlice";
 import { useAppSelector } from "@/redux/hooks";
 import { Button, Layout, theme } from "antd";
@@ -21,6 +22,9 @@ const App: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
 
   const currentUser = useAppSelector(selectCurrentUser);
+
+  const { data: me } = useGetMeQuery(undefined);
+  console.log("🚀 ~ App ~ loggedInUser:", me);
 
   if (!currentUser) {
     router.push("/login");
@@ -76,10 +80,12 @@ const App: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               onClick={() => setCollapsed(!collapsed)}
               className="flex max-h-[0px] items-center justify-center transition-all duration-300 bg-cyan-30"
             />
-            <div className=" leading-6 w-full flex items-center justify-between gap-10 bg-indigo-40">
-              <div>
-                <h4 className="text-[24px]">Welcome, James</h4>
-                <p className="text-[16px] leading-0">Have a nice day!</p>
+            <div className="w-full flex items-center justify-between gap-10 bg-indigo-40">
+              <div className=" !h-auto">
+                <h4 className="text-[24px] leading-12">
+                  Welcome, {me?.data?.firstName || currentUser?.firstName}
+                </h4>
+                <p className="text-[16px] leading-6">Have a nice day!</p>
               </div>
 
               <div className="flex items-center gap-4 relative">

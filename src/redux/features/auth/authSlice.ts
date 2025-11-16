@@ -5,7 +5,7 @@ import { RootState } from "../../store";
 export type TUser = {
   id: string;
   email: string;
-  name: string;
+  firstName: string;
   profileImage?: string;
   phoneNumber?: string;
   address?: string;
@@ -36,7 +36,9 @@ const authSlice = createSlice({
       }
 
       state.user = user;
-      state.token = `Bearer ${token}`;
+      if (token) {
+        state.token = `Bearer ${token}`;
+      }
 
       Cookies.set("authToken", token, { expires: 7, path: "/" });
     },

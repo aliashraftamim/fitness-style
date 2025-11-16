@@ -11,7 +11,7 @@ const HomeTop = () => {
     {
       icon: <FaHandHoldingDollar size={28} />,
       label: "Total Earnings",
-      value: users?.data?.totalEarning || "$00.00",
+      value: `${Math.round(users?.data?.totalEarning || 0)}` || "$00.00",
     },
     {
       icon: <TbUsers size={28} />,
