@@ -13,6 +13,7 @@ import { formatDistanceToNow } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import io, { Socket } from "socket.io-client";
 import { toast } from "sonner";
+import Loading from "../MAIN/loading/Loading";
 import ChatInbox from "./ChatInbox";
 import CustomerList from "./CustomerList";
 
@@ -342,8 +343,7 @@ const CustomerSupportChat = () => {
     return formatDistanceToNow(new Date(dateString), { addSuffix: true });
   };
 
-  if (!supportCustomers)
-    return <div className="p-10 text-center text-gray-500">Loading...</div>;
+  if (!supportCustomers) return <Loading />;
 
   return (
     <div className="flex h-[calc(100vh-100px)] bg-gray-100 overflow-hidden">

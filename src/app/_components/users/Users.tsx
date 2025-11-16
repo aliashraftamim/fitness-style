@@ -12,6 +12,7 @@ import React, { useState } from "react";
 import { GoBlocked } from "react-icons/go";
 import { MdLockOpen } from "react-icons/md";
 import { toast } from "sonner";
+import Loading from "../MAIN/loading/Loading";
 import { IUser, USER_STATUS } from "./user.interface";
 
 const User: React.FC = () => {
@@ -30,7 +31,7 @@ const User: React.FC = () => {
     limit: pageSize,
   });
 
-  if (isLoading) return <p>Loading...</p>;
+  if (isLoading) return <Loading />;
   if (error) return <p>Something went wrong!</p>;
 
   const meta = data?.meta;

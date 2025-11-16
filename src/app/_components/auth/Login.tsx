@@ -1,9 +1,11 @@
-"user client";
+"use client";
 
+import useFcmToken from "@/hooks/useFcmToken";
 import { useLoginMutation } from "@/redux/features/auth/authApi";
 import { selectCurrentUser, setUser } from "@/redux/features/auth/authSlice";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { toast } from "sonner";
 import { AuthForm } from "./AuthForm";
 
@@ -11,31 +13,36 @@ const Login = () => {
   const [login] = useLoginMutation();
   const dispatch = useAppDispatch();
   const router = useRouter();
-
   const currentUser = useAppSelector(selectCurrentUser);
 
-  if (currentUser) {
-    router.push("/");
-    router.refresh();
-  }
+  const { fcmToken } = useFcmToken();
+  console.log("🚀 ~ Login ~ fcmToken:", fcmToken);
+
+  useEffect(() => {
+    if (currentUser) {
+      router.push("/");
+      router.refresh();
+    }
+  }, [currentUser, router]);
 
   const handleLogin = async (values: Record<string, string | boolean>) => {
-    const res = await login({
-      email: values.email,
-      password: values.password,
-    }).unwrap();
-    console.log("🚀 ~ handleLogin ~ res:", res);
+    try {
+      const res = await login({
+        email: values.email as string,
+        password: values.password as string,
+      }).unwrap();
 
-    if (res?.success) {
-      dispatch(
-        setUser({ user: res?.data?.user, token: res?.data.access_token })
-      );
-      toast.success(res?.data?.message || "Login successful");
+      console.log("🚀 ~ handleLogin ~ res:", res);
 
-      if (currentUser) {
-        router.push("/");
-        router.refresh();
+      if (res?.success) {
+        dispatch(
+          setUser({ user: res?.data?.user, token: res?.data.access_token })
+        );
+        toast.success(res?.data?.message || "Login successful");
       }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again.");
     }
   };
 
