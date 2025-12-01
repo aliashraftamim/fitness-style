@@ -382,7 +382,7 @@ const ChatInbox = ({
                     <div
                       className={`rounded-2xl px-4 py-2 ${
                         isUser
-                          ? "bg-indigo-600 text-red-600 rounded-br-none"
+                          ? "bg-indigo-600 text-white rounded-br-none"
                           : "bg-white text-gray-800 shadow-sm rounded-bl-none"
                       }`}
                     >
