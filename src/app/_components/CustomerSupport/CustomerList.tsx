@@ -37,8 +37,9 @@ const CustomerList = ({
   getUserName,
   getTimeAgo,
 }: Props) => {
+  console.log("🚀 ~ CustomerList ~ customers:", customers);
   const filteredCustomers = customers.filter((customer) =>
-    customer.email.toLowerCase().includes(searchQuery.toLowerCase())
+    customer.partnerName.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

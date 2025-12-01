@@ -51,6 +51,7 @@ const CustomerSupportChat = () => {
   const { data: supportCustomers } = useGetSupportCustomersQuery(undefined);
 
   const currentUser = useAppSelector(selectCurrentUser);
+  console.log("🚀 ~ CustomerSupportChat ~ currentUser:", currentUser);
 
   // Local state for customers to update lastMessage
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -58,7 +59,7 @@ const CustomerSupportChat = () => {
   const bearerToken = useAppSelector(useCurrentToken);
   const token = bearerToken?.split(" ")[1];
 
-  const myId = currentUser?.id as string; // Your admin/support ID
+  const myId = currentUser?._id as string; // Your admin/support ID
 
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
@@ -106,22 +107,18 @@ const CustomerSupportChat = () => {
       return;
     }
 
-    console.log(
-      "🚀 ~ CustomerSupportChat ~ process.env.NEXT_PUBLIC_SOCKET_URL:",
-      process.env.NEXT_PUBLIC_SOCKET_URL
-    );
     socketRef.current = io(process.env.NEXT_PUBLIC_SOCKET_URL, {
       extraHeaders: { token },
     });
 
     const socket = socketRef.current;
 
-    console.log("🟢 Connecting socket...", socket);
+    console.info("🟢 Connecting socket...", socket);
 
-    socket.on("connect", () => console.log("✅ Socket connected:", socket.id));
-    socket.on("disconnect", () => console.log("❌ Socket disconnected"));
+    socket.on("connect", () => console.info("✅ Socket connected:", socket.id));
+    socket.on("disconnect", () => console.info("❌ Socket disconnected"));
     socket.on("connect_error", (err) =>
-      console.log("⚠️ Socket connection error:", err)
+      console.info("⚠️ Socket connection error:", err)
     );
 
     socket.on("new_message", (data: any) => {
@@ -131,7 +128,7 @@ const CustomerSupportChat = () => {
         data.recipientId === selectedCustomer?.receiver;
       toast.success("New message received");
       if (!isFromSelectedCustomer && !isToSelectedCustomer) {
-        console.log("❌ Message not for current chat, ignoring");
+        console.info("❌ Message not for current chat, ignoring");
         return;
       }
 
@@ -276,11 +273,6 @@ const CustomerSupportChat = () => {
       attachments: [],
       createdAt: new Date().toISOString(),
     };
-
-    console.log(
-      "🚀 ~ handleSendMessage ~ selectedCustomer.receiver:",
-      selectedCustomer.receiver
-    );
 
     socketRef.current.emit("send_message", {
       recipientId: selectedCustomer.receiver,

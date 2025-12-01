@@ -2,7 +2,7 @@
 
 import { useGetACustomerChatQuery } from "@/redux/features/chat/chat.api";
 import { PhoneFilled, RobotFilled } from "@ant-design/icons";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
 import { BiImage, BiVideo } from "react-icons/bi";
 import { BsSendArrowUp } from "react-icons/bs";
@@ -49,7 +49,6 @@ interface Props {
   getInitials: (email: string) => string;
   isTyping: boolean;
   myId: string;
-
   imagePreview: string | null;
   handleRemoveImage: () => void;
   isLoading: boolean;
@@ -87,99 +86,107 @@ const ChatInbox = ({
   // Image viewer state
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [allImages, setAllImages] = useState<string[]>([]);
 
-  // Track if user is at bottom
+  // Scroll management refs
   const [isAtBottom, setIsAtBottom] = useState(true);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
-  const prevMessageCountRef = useRef(0);
   const prevScrollHeight = useRef(0);
-  const isInitialLoad = useRef(true);
+  const isInitialLoadRef = useRef(true);
+  const prevCustomerIdRef = useRef(selectedCustomer._id);
+  const prevMessageLengthRef = useRef(0);
 
   // Load messages from API
   useEffect(() => {
     if (customerChat?.data) {
       const newMessages = customerChat.data;
 
-      // Check if there are more messages to load
       if (newMessages.length < 20) {
         setHasMore(false);
       }
 
       setAllLoadedMessages((prev) => {
-        // Remove duplicates and merge
-        const combined = [...newMessages, ...prev];
-        const unique = combined.reduce((acc: Message[], current: Message) => {
-          const exists = acc.find((msg) => msg._id === current._id);
-          if (!exists) {
-            acc.push(current);
-          }
-          return acc;
-        }, []);
-        return unique;
+        const messageMap = new Map(prev.map((msg) => [msg._id, msg]));
+        newMessages.forEach((msg: Message) => messageMap.set(msg._id, msg));
+        return Array.from(messageMap.values());
       });
 
       setIsLoadingMore(false);
     }
   }, [customerChat]);
 
-  // Reset pagination when customer changes
+  // Reset when customer changes
   useEffect(() => {
-    setPage(1);
-    setAllLoadedMessages([]);
-    setHasMore(true);
-    isInitialLoad.current = true;
-    prevScrollHeight.current = 0;
+    if (prevCustomerIdRef.current !== selectedCustomer._id) {
+      setPage(1);
+      setAllLoadedMessages([]);
+      setHasMore(true);
+      isInitialLoadRef.current = true;
+      prevScrollHeight.current = 0;
+      setIsAtBottom(true);
+      prevCustomerIdRef.current = selectedCustomer._id;
+      prevMessageLengthRef.current = 0;
+    }
   }, [selectedCustomer._id]);
 
-  // Combine API messages with realtime messages
-  const allMessages = [...allLoadedMessages, ...realtimeMessages].reduce(
-    (acc: Message[], current: Message) => {
-      const exists = acc.find((msg) => msg._id === current._id);
-      if (!exists) {
-        acc.push(current);
+  // Memoize sorted messages to prevent unnecessary recalculations
+  const sortedMessages = useMemo(() => {
+    const messageMap = new Map<string, Message>();
+
+    // Add loaded messages
+    allLoadedMessages.forEach((msg) => messageMap.set(msg._id, msg));
+
+    // Add realtime messages (will override if duplicate)
+    realtimeMessages.forEach((msg) => messageMap.set(msg._id, msg));
+
+    // Convert to array and sort
+    return Array.from(messageMap.values()).sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+    );
+  }, [allLoadedMessages, realtimeMessages]);
+
+  // Extract all images - memoized
+  const allImages = useMemo(() => {
+    const images: string[] = [];
+    sortedMessages.forEach((msg) => {
+      if (msg.attachments?.length > 0) {
+        images.push(...msg.attachments);
       }
-      return acc;
-    },
-    []
-  );
+    });
+    return images;
+  }, [sortedMessages]);
 
-  // Sort by createdAt (oldest first)
-  const sortedMessages = allMessages.sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  // Check if user is at bottom of scroll
-  const checkIfAtBottom = () => {
+  // Check if at bottom
+  const checkIfAtBottom = useCallback(() => {
     const container = messagesContainerRef.current;
-    if (!container) return true;
+    if (!container) return;
 
     const threshold = 100;
     const isBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight <
       threshold;
     setIsAtBottom(isBottom);
-  };
+  }, []);
 
-  // Handle scroll event with pagination
-  const handleScroll = () => {
+  // Handle scroll with pagination
+  const handleScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
     checkIfAtBottom();
 
-    // Check if scrolled to top
+    // Load more on scroll to top
     if (container.scrollTop < 100 && hasMore && !isLoadingMore && !isFetching) {
       setIsLoadingMore(true);
       prevScrollHeight.current = container.scrollHeight;
       setPage((prev) => prev + 1);
     }
-  };
+  }, [hasMore, isLoadingMore, isFetching, checkIfAtBottom]);
 
-  // Maintain scroll position after loading more messages
+  // Maintain scroll position after loading more
   useEffect(() => {
     const container = messagesContainerRef.current;
-    if (!container || isInitialLoad.current) return;
+    if (!container || isInitialLoadRef.current) return;
 
     if (prevScrollHeight.current > 0) {
       const newScrollHeight = container.scrollHeight;
@@ -187,78 +194,58 @@ const ChatInbox = ({
       container.scrollTop = scrollDiff;
       prevScrollHeight.current = 0;
     }
-  }, [sortedMessages]);
+  }, [allLoadedMessages]);
 
-  // Auto scroll only when:
-  // 1. New message arrives AND user is at bottom
-  // 2. OR when selected customer changes (initial load)
+  // Auto scroll logic - FIXED to prevent infinite loop
   useEffect(() => {
-    const messageCount = sortedMessages.length;
-    const isNewMessage = messageCount > prevMessageCountRef.current;
-    prevMessageCountRef.current = messageCount;
+    const currentLength = sortedMessages.length;
+    const hasNewMessage = currentLength > prevMessageLengthRef.current;
 
-    if (isInitialLoad.current) {
-      // Scroll to bottom on initial load
+    if (isInitialLoadRef.current && currentLength > 0) {
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-        isInitialLoad.current = false;
+        isInitialLoadRef.current = false;
+        prevMessageLengthRef.current = currentLength;
       }, 100);
-    } else if (isNewMessage && isAtBottom) {
+    } else if (hasNewMessage && isAtBottom && !isInitialLoadRef.current) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      prevMessageLengthRef.current = currentLength;
     }
-  }, [sortedMessages, isAtBottom]);
+  }, [sortedMessages.length, isAtBottom]);
 
-  // Scroll to bottom when customer changes
-  useEffect(() => {
-    isInitialLoad.current = true;
-    setIsAtBottom(true);
-    prevMessageCountRef.current = sortedMessages.length;
-  }, [selectedCustomer._id]);
+  // Image viewer handlers
+  const handleImageClick = useCallback(
+    (imageUrl: string) => {
+      const index = allImages.indexOf(imageUrl);
+      setCurrentImageIndex(index);
+      setSelectedImage(imageUrl);
+    },
+    [allImages]
+  );
 
-  // Collect all images from messages
-  useEffect(() => {
-    const images: string[] = [];
-    sortedMessages.forEach((msg) => {
-      if (msg.attachments?.length > 0) {
-        images.push(...msg.attachments);
-      }
-    });
-    setAllImages(images);
-  }, [sortedMessages]);
-
-  // Handle image click
-  const handleImageClick = (imageUrl: string) => {
-    const index = allImages.indexOf(imageUrl);
-    setCurrentImageIndex(index);
-    setSelectedImage(imageUrl);
-  };
-
-  // Navigate to previous image
-  const handlePrevImage = () => {
+  const handlePrevImage = useCallback(() => {
     if (currentImageIndex > 0) {
       setCurrentImageIndex(currentImageIndex - 1);
       setSelectedImage(allImages[currentImageIndex - 1]);
     }
-  };
+  }, [currentImageIndex, allImages]);
 
-  // Navigate to next image
-  const handleNextImage = () => {
+  const handleNextImage = useCallback(() => {
     if (currentImageIndex < allImages.length - 1) {
       setCurrentImageIndex(currentImageIndex + 1);
       setSelectedImage(allImages[currentImageIndex + 1]);
     }
-  };
+  }, [currentImageIndex, allImages]);
 
-  // Close image viewer
-  const closeImageViewer = () => {
+  const closeImageViewer = useCallback(() => {
     setSelectedImage(null);
-  };
+  }, []);
 
-  // Handle keyboard navigation
+  // Keyboard navigation for image viewer
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!selectedImage) return;
+    if (!selectedImage) return;
 
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         closeImageViewer();
       } else if (e.key === "ArrowLeft") {
@@ -270,7 +257,7 @@ const ChatInbox = ({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedImage, currentImageIndex]);
+  }, [selectedImage, handlePrevImage, handleNextImage, closeImageViewer]);
 
   return (
     <div className="flex-1 flex flex-col">
@@ -322,7 +309,7 @@ const ChatInbox = ({
         onScroll={handleScroll}
         className="flex-1 px-6 py-4 space-y-4 bg-gray-50 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent max-h-[calc(100vh-300px)]"
       >
-        {/* Loading indicator at top */}
+        {/* Loading indicator */}
         {isLoadingMore && (
           <div className="flex justify-center py-4">
             <div className="flex items-center space-x-2 text-indigo-600">
@@ -332,7 +319,7 @@ const ChatInbox = ({
           </div>
         )}
 
-        {/* No more messages indicator */}
+        {/* No more messages */}
         {!hasMore && sortedMessages.length > 0 && (
           <div className="flex justify-center py-4">
             <div className="bg-gray-200 text-gray-600 text-xs px-4 py-2 rounded-full">

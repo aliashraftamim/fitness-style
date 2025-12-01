@@ -49,15 +49,20 @@ export const HandleUserSubscription = ({
     }
 
     try {
+      const data: Record<string, any> = {
+        "payment.tiersId": selectedTier,
+        "payment.paymentMethod": "free",
+        "payment.makeByAdmin": true,
+        "payment.isAllTiers": false,
+      };
+
+      if (selectedTier === "all-tiers") {
+        data["payment.isAllTiers"] = true;
+        data["payment.tiersId"] = null;
+      }
+
       const formData = new FormData();
-      formData.append(
-        "data",
-        JSON.stringify({
-          "payment.tiersId": selectedTier,
-          "payment.paymentMethod": "free",
-          "payment.makeByAdmin": true,
-        })
-      );
+      formData.append("data", JSON.stringify(data));
 
       await updateUser({ id: user._id, data: formData }).unwrap();
       toast.success("User subscription updated successfully");
@@ -116,7 +121,10 @@ export const HandleUserSubscription = ({
               loading={isTiersLoading}
               size="large"
               className="w-full"
-              options={tiersData.map((tier) => ({
+              options={[
+                ...tiersData,
+                { _id: "all-tiers", name: "All Tiers" },
+              ].map((tier) => ({
                 value: tier._id,
                 label: tier.name,
               }))}

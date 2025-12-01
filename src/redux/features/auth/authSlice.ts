@@ -3,7 +3,7 @@ import Cookies from "js-cookie";
 import { RootState } from "../../store";
 
 export type TUser = {
-  id: string;
+  _id: string;
   email: string;
   firstName: string;
   profileImage?: string;
