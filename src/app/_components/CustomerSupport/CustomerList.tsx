@@ -69,7 +69,7 @@ const CustomerList = ({
           >
             <div className="flex items-center space-x-3">
               <div className="relative">
-                {customer.profileImage ? (
+                {customer?.profileImage ? (
                   <img
                     src={customer.profileImage}
                     alt={customer.email}

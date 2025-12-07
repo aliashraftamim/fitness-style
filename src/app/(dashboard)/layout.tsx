@@ -24,7 +24,6 @@ const App: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const currentUser = useAppSelector(selectCurrentUser);
 
   const { data: me } = useGetMeQuery(undefined);
-  console.log("🚀 ~ App ~ loggedInUser:", me);
 
   if (!currentUser) {
     router.push("/login");

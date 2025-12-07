@@ -138,12 +138,14 @@ export default function Tiers() {
             >
               <div className="flex flex-col items-center justify-center gap-2 text-white">
                 <div className="bg-white/20 backdrop-blur-sm rounded-full p-3 group-hover:scale-110 transition-transform duration-300">
-                  <Image
-                    src={tier?.icon}
-                    alt={tier?.name}
-                    width={40}
-                    height={40}
-                  />
+                  {tier?.icon && (
+                    <Image
+                      src={tier?.icon}
+                      alt={tier?.name}
+                      width={40}
+                      height={40}
+                    />
+                  )}
                 </div>
                 <h2 className="text-sm font-semibold uppercase tracking-wide">
                   {tier?.name}
@@ -206,12 +208,14 @@ export default function Tiers() {
                     )}
                     <div className="flex items-start gap-4">
                       <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4">
-                        <Image
-                          src={tier?.icon}
-                          alt={tier?.name}
-                          width={60}
-                          height={60}
-                        />
+                        {tier?.icon && (
+                          <Image
+                            src={tier?.icon}
+                            alt={tier?.name}
+                            width={60}
+                            height={60}
+                          />
+                        )}
                       </div>
                       <div className="flex-1">
                         <h3 className="text-2xl font-bold mb-1">{tier.name}</h3>

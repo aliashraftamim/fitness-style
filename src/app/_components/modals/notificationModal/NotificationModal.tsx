@@ -79,16 +79,15 @@ const NotificationModal = ({
                   index !== 0 ? "border-t border-gray-300" : ""
                 }`}
               >
-                <Image
-                  src={
-                    notification?.sender?.profileImage ||
-                    "https://res.cloudinary.com/dyalzfwd4/image/upload/v1738207704/user_wwrref.png"
-                  }
-                  height={40}
-                  width={40}
-                  alt="Notification Profile Image"
-                  className="rounded-full"
-                />
+                {notification?.sender?.profileImage && (
+                  <Image
+                    src={notification?.sender?.profileImage}
+                    height={40}
+                    width={40}
+                    alt="Notification Profile Image"
+                    className="rounded-full"
+                  />
+                )}
                 <div className="flex-1">
                   <p className="text-gray-800">
                     <span className="font-medium">

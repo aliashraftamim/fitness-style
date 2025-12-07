@@ -59,11 +59,7 @@ export const sidebarMenuItems = [
   {
     key: "/customer-support",
     icon: <BiSupport size={22} />,
-    label: (
-      <Link href="/customer-support" legacyBehavior>
-        Customer Support
-      </Link>
-    ),
+    label: <Link href="/customer-support">Customer Support</Link>,
   },
   {
     key: "/settings",

@@ -59,13 +59,15 @@ const HeaderMenuDropdown = () => {
         className="flex items-center gap-2 rounded-2xl border-2 px-4 py-2 transition bg-white shadow-sm hover:shadow-md"
       >
         <span className="font-semibold text-sm">{displayName}</span>
-        <Image
-          src={displayImage}
-          height={32}
-          width={32}
-          alt="Profile"
-          className="w-8 h-8 rounded-full border-brand-primary object-cover"
-        />
+        {displayImage && (
+          <Image
+            src={displayImage}
+            height={32}
+            width={32}
+            alt="Profile"
+            className="w-8 h-8 rounded-full border-brand-primary object-cover"
+          />
+        )}
       </button>
 
       {isOpen && (

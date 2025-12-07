@@ -140,13 +140,13 @@ const VerifyOTP = ({ setOpen, setIsVerifyMail, resetToken }: any) => {
           {error && <p className="text-red-500 mt-2">{error}</p>}
           <div className="mt-3 text-gray-600">
             Didn't receive the code?{" "}
-            <a
-              href="#"
-              className="text-green-600 font-semibold"
+            <button
+              type="button"
+              className="text-green-600 font-semibold underline"
               onClick={handleResendOTP}
             >
               Resend
-            </a>
+            </button>
           </div>
           <button
             type="button"

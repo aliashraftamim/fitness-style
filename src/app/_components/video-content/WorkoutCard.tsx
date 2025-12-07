@@ -74,11 +74,13 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
     <>
       <div className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] border border-gray-100">
         <div className="relative h-48 bg-gradient-to-br from-green-50 to-green-100 overflow-hidden">
-          <img
-            src={workout.image}
-            alt={workout.workoutTitle}
-            className="w-full h-full object-cover"
-          />
+          {workout?.image && (
+            <img
+              src={workout?.image}
+              alt={workout?.workoutTitle}
+              className="w-full h-full object-cover"
+            />
+          )}
           {workout.isCompleted && (
             <div className="absolute top-3 left-3 bg-green-600 text-white px-3 py-1 rounded-full text-xs font-medium shadow-sm">
               ✓ Completed
@@ -158,9 +160,14 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
             {workout.description}
           </p>
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-            <span className="text-xs text-gray-500 bg-gray-50 px-3 py-1 rounded-full">
-              {workout.workoutType}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-500 bg-green-100 px-3 py-1 rounded-full">
+                {(workout as any)?.tier?.name}
+              </span>
+              <span className="text-xs text-gray-500 bg-yellow-50 px-3 py-1 rounded-full">
+                {workout.workoutType}
+              </span>
+            </div>
             <Link
               href={`/video-content/${workout._id}`}
               className="text-green-600 hover:text-green-700 font-medium text-sm transition-colors"

@@ -447,11 +447,13 @@ const ChatInbox = ({
       <div className="bg-white border-t border-gray-200 px-6 py-4 relative">
         {imagePreview && (
           <div className="absolute bottom-16 inline-block mr-2">
-            <img
-              src={imagePreview}
-              alt="Preview"
-              className="h-20 w-20 object-cover rounded-lg border-2 border-blue-500"
-            />
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="h-20 w-20 object-cover rounded-lg border-2 border-blue-500"
+              />
+            )}
             <button
               onClick={handleRemoveImage}
               className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600"
@@ -542,11 +544,13 @@ const ChatInbox = ({
             )}
 
             {/* Image */}
-            <img
-              src={selectedImage}
-              alt="Full size"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-            />
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Full size"
+                className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              />
+            )}
           </div>
         </div>
       )}

@@ -6,6 +6,7 @@ import { Button } from "antd";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DynamicModal from "../shared/DynamicModal";
+import { ITier } from "../Tiers/tiers.interface";
 
 export interface IWorkoutPlan {
   _id?: string;
@@ -16,7 +17,7 @@ export interface IWorkoutPlan {
   videoUrl?: string;
   workoutType: string;
   workoutPlan: string[];
-  tier: string;
+  tier: string | ITier;
 }
 
 interface EditWorkoutModalProps {
@@ -142,7 +143,10 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           description: planData.description,
           workoutType: planData.workoutType,
           workoutPlan: planData.workoutPlan,
-          tier: planData.tier,
+          tier:
+            typeof planData.tier === "string"
+              ? planData.tier
+              : (planData.tier as ITier)?._id || planData.tier,
         })
       );
 
@@ -271,7 +275,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           </label>
           <select
             name="tier"
-            value={planData.tier}
+            value={typeof planData.tier === "string" ? planData.tier : (planData.tier as ITier)?._id || ""}
             onChange={handleInputChange}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
           >

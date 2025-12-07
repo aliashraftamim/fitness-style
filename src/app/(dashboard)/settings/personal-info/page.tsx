@@ -145,13 +145,15 @@ const PersonalInfoPage = () => {
       <div className="flex items-center justify-start gap-10">
         {/* Profile Image Section */}
         <div className="min-w-[300px] h-[365px] bg-[#C4E5CD] border border-[#41AB5D] rounded-lg flex flex-col items-center justify-center">
-          <Image
-            src={profileImage}
-            width={144}
-            height={144}
-            alt="admin-image"
-            className="rounded-full object-cover size-28 mb-3"
-          />
+          {profileImage && (
+            <Image
+              src={profileImage}
+              width={144}
+              height={144}
+              alt="admin-image"
+              className="rounded-full object-cover size-28 mb-3"
+            />
+          )}
           <Upload
             onChange={handleUploadImage}
             showUploadList={false}

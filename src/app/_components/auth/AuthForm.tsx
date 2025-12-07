@@ -72,13 +72,15 @@ export const AuthForm = ({
       <div className="w-full max-w-6xl bg-white grid grid-cols-1 md:grid-cols-2 min-h-screen shadow-md">
         {/* Left Image */}
         <div className="relative hidden md:block">
-          <Image
-            src={imageLink}
-            alt="Login Image"
-            layout="fill"
-            objectFit="cover"
-            priority
-          />
+          {imageLink && (
+            <Image
+              src={imageLink}
+              alt="Login Image"
+              layout="fill"
+              objectFit="cover"
+              priority
+            />
+          )}
         </div>
 
         {/* Right Login Form */}
