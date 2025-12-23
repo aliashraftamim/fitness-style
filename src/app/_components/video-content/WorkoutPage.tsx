@@ -6,19 +6,7 @@ import { useMemo, useState } from "react";
 import Loading from "../MAIN/loading/Loading";
 import AddPlanModal, { IWorkoutPlan } from "./AddWorkout";
 import WorkoutCard from "./WorkoutCard";
-
-export type TFormData = {
-  _id?: string;
-  image: string;
-  videoUrl: string;
-  workoutTitle: string;
-  subtitle: string;
-  description: string;
-  tier: string;
-  workoutType: string;
-  workoutPlan: string[];
-  isCompleted?: boolean;
-};
+import { TFormData } from "./video-content.interface";
 
 const WorkoutPage = () => {
   const [selectedTier, setSelectedTier] = useState<any>(null);

@@ -159,6 +159,9 @@ const WorkoutCard = ({ workout }: WorkoutCardProps) => {
           <p className="text-sm text-gray-600 line-clamp-2 mb-4">
             {workout.description}
           </p>
+          <p className="text-sm text-gray-600 line-clamp-2 mb-4">
+            Position: {workout.sortingPosition}
+          </p>
           <div className="flex items-center justify-between pt-3 border-t border-gray-100">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500 bg-green-100 px-3 py-1 rounded-full">

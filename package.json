@@ -19,6 +19,7 @@
     "date-fns": "^4.1.0",
     "firebase": "^12.6.0",
     "framer-motion": "^12.23.9",
+    "heic2any": "^0.0.4",
     "js-cookie": "^3.0.5",
     "moment": "^2.30.1",
     "next": "^15.4.4",

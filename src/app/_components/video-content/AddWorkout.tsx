@@ -2,8 +2,15 @@
 
 import { useGetAllTiersQuery } from "@/redux/features/admin/tiers.api";
 import { useCreateVideoContentMutation } from "@/redux/features/admin/video-content.api";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+  cleanupPreviewUrls,
+  handleImageUpload,
+  handleVideoUpload,
+} from "@/utils/fileUploadHelpers";
 import { Button } from "antd";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import DynamicModal from "../shared/DynamicModal";
 
@@ -13,6 +20,7 @@ export interface IWorkoutPlan {
   description: string;
   workoutType: string;
   workoutPlan: string[];
+  sortingPosition?: number;
   tier: string;
 }
 
@@ -46,6 +54,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
+  const [isConverting, setIsConverting] = useState(false);
 
   // 🔄 Handle text/select/textarea inputs
   const handleInputChange = (
@@ -62,24 +71,46 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
     }
   };
 
-  // 🖼️ Image upload
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 🖼️ ✅ REPLACE the entire handleImageChange function
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-    }
+    if (!file) return;
+
+    setIsConverting(true);
+
+    await handleImageUpload(
+      file,
+      (convertedFile, previewUrl) => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImageFile(convertedFile);
+        setImagePreview(previewUrl);
+        setIsConverting(false);
+      },
+      (error) => {
+        console.error(error);
+        e.target.value = "";
+        setIsConverting(false);
+      }
+    );
   };
 
-  // 🎥 Video upload
+  // 🎥 ✅ REPLACE the entire handleVideoChange function
   const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      const url = URL.createObjectURL(file);
-      setVideoPreview(url);
-    }
+    if (!file) return;
+
+    handleVideoUpload(
+      file,
+      (validatedFile, previewUrl) => {
+        if (videoPreview) URL.revokeObjectURL(videoPreview);
+        setVideoFile(validatedFile);
+        setVideoPreview(previewUrl);
+      },
+      (error) => {
+        console.error(error);
+        e.target.value = "";
+      }
+    );
   };
 
   // ➕ Add workout step
@@ -120,6 +151,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
           workoutType: planData.workoutType,
           workoutPlan: planData.workoutPlan,
           tier: planData.tier,
+          sortingPosition: Number(planData.sortingPosition),
         })
       );
 
@@ -154,25 +186,41 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
       );
     }
   };
-
+  // ✅ Add this entire useEffect
+  useEffect(() => {
+    return () => {
+      cleanupPreviewUrls([imagePreview, videoPreview]);
+    };
+  }, [imagePreview, videoPreview]);
   return (
     <DynamicModal isOpen={isOpen} onClose={onClose}>
-      <div className="!max-h-[90vh] overflow-y-scroll space-y-5">
-        {/* 🖼️ Image Upload */}
+      <div className="!max-h-[90vh] overflow-y-scroll space-y-5 px-3">
+        {/* 🖼️ Image Upload - UPDATE this section */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Workout Image
+            Workout Image{" "}
+            {isConverting && (
+              <span className="text-blue-600">(Converting...)</span>
+            )}
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center relative hover:border-green-400 transition-colors bg-gray-50">
+          <div
+            className={`border-2 border-dashed border-gray-300 rounded-xl p-8 text-center relative hover:border-green-400 transition-colors bg-gray-50 ${
+              isConverting ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
             <div className="text-4xl text-gray-400 mb-3">📁</div>
             <p className="text-gray-600 text-sm">
               Drop your image here or{" "}
               <span className="text-green-600 font-semibold">browse</span>
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Supports: JPG, PNG, WEBP, GIF, HEIC (Max 10MB)
+            </p>
             <input
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGE_TYPES}
               onChange={handleImageChange}
+              disabled={isConverting}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
           </div>
@@ -185,7 +233,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
           )}
         </div>
 
-        {/* 🎥 Video Upload */}
+        {/* 🎥 Video Upload - UPDATE this section */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Workout Video
@@ -196,9 +244,12 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
               Upload video file or{" "}
               <span className="text-green-600 font-semibold">browse</span>
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Supports: MP4, WEBM, OGG, MOV (Max 200MB)
+            </p>
             <input
               type="file"
-              accept="video/*"
+              accept={ACCEPTED_VIDEO_TYPES}
               onChange={handleVideoChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
@@ -315,6 +366,23 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
             >
               Add
             </Button>
+          </div>
+
+          {/* 📋 Workout Position */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Workout Position
+            </label>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="number"
+                value={planData.sortingPosition || ""}
+                name="sortingPosition"
+                onChange={handleInputChange}
+                placeholder="Add workout position..."
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+              />
+            </div>
           </div>
 
           {planData.workoutPlan.length > 0 && (

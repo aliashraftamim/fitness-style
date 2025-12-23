@@ -2,6 +2,13 @@
 
 import { useGetAllTiersQuery } from "@/redux/features/admin/tiers.api";
 import { useUpdateVideoContentMutation } from "@/redux/features/admin/video-content.api";
+import {
+  ACCEPTED_IMAGE_TYPES,
+  ACCEPTED_VIDEO_TYPES,
+  cleanupPreviewUrls,
+  handleImageUpload,
+  handleVideoUpload,
+} from "@/utils/fileUploadHelpers";
 import { Button } from "antd";
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -17,6 +24,7 @@ export interface IWorkoutPlan {
   videoUrl?: string;
   workoutType: string;
   workoutPlan: string[];
+  sortingPosition: number;
   tier: string | ITier;
 }
 
@@ -46,6 +54,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
     workoutType: "Beginner",
     workoutPlan: [],
     tier: "",
+    sortingPosition: 0,
   });
 
   const [planInput, setPlanInput] = useState("");
@@ -53,6 +62,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
   const [videoPreview, setVideoPreview] = useState("");
+  const [isConverting, setIsConverting] = useState(false);
 
   // Load edit data when modal opens
   useEffect(() => {
@@ -83,26 +93,6 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
     }
   };
 
-  // 🖼️ Image upload
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      const url = URL.createObjectURL(file);
-      setImagePreview(url);
-    }
-  };
-
-  // 🎥 Video upload
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setVideoFile(file);
-      const url = URL.createObjectURL(file);
-      setVideoPreview(url);
-    }
-  };
-
   // ➕ Add workout step
   const handleAddPlanItem = () => {
     if (planInput.trim()) {
@@ -112,6 +102,48 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
       }));
       setPlanInput("");
     }
+  };
+
+  // 🖼️ ✅ REPLACE the entire handleImageChange function
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsConverting(true);
+
+    await handleImageUpload(
+      file,
+      (convertedFile, previewUrl) => {
+        if (imagePreview) URL.revokeObjectURL(imagePreview);
+        setImageFile(convertedFile);
+        setImagePreview(previewUrl);
+        setIsConverting(false);
+      },
+      (error) => {
+        console.error(error);
+        e.target.value = "";
+        setIsConverting(false);
+      }
+    );
+  };
+
+  // 🎥 ✅ REPLACE the entire handleVideoChange function
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    handleVideoUpload(
+      file,
+      (validatedFile, previewUrl) => {
+        if (videoPreview) URL.revokeObjectURL(videoPreview);
+        setVideoFile(validatedFile);
+        setVideoPreview(previewUrl);
+      },
+      (error) => {
+        console.error(error);
+        e.target.value = "";
+      }
+    );
   };
 
   // ❌ Remove workout step
@@ -143,6 +175,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           description: planData.description,
           workoutType: planData.workoutType,
           workoutPlan: planData.workoutPlan,
+          sortingPosition: Number(planData.sortingPosition),
           tier:
             typeof planData.tier === "string"
               ? planData.tier
@@ -176,6 +209,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
         workoutType: "Beginner",
         workoutPlan: [],
         tier: "",
+        sortingPosition: 0,
       });
       setPlanInput("");
     } catch (err: any) {
@@ -185,25 +219,41 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
       );
     }
   };
-
+  // ✅ Add this entire useEffect
+  useEffect(() => {
+    return () => {
+      cleanupPreviewUrls([imagePreview, videoPreview]);
+    };
+  }, [imagePreview, videoPreview]);
   return (
     <DynamicModal isOpen={isOpen} onClose={onClose}>
-      <div className="!max-h-[90vh] overflow-y-scroll space-y-5">
-        {/* 🖼️ Image Upload */}
+      <div className="!max-h-[90vh] overflow-y-scroll space-y-5 px-3">
+        {/* 🖼️ Image Upload - REPLACE entire div */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Workout Image
+            Workout Image{" "}
+            {isConverting && (
+              <span className="text-blue-600">(Converting...)</span>
+            )}
           </label>
-          <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center relative hover:border-green-400 transition-colors bg-gray-50">
+          <div
+            className={`border-2 border-dashed border-gray-300 rounded-xl p-8 text-center relative hover:border-green-400 transition-colors bg-gray-50 ${
+              isConverting ? "opacity-50 pointer-events-none" : ""
+            }`}
+          >
             <div className="text-4xl text-gray-400 mb-3">📁</div>
             <p className="text-gray-600 text-sm">
               Drop your image here or{" "}
               <span className="text-green-600 font-semibold">browse</span>
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Supports: JPG, PNG, WEBP, GIF, HEIC (Max 10MB)
+            </p>
             <input
               type="file"
-              accept="image/*"
+              accept={ACCEPTED_IMAGE_TYPES}
               onChange={handleImageChange}
+              disabled={isConverting}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
           </div>
@@ -216,7 +266,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           )}
         </div>
 
-        {/* 🎥 Video Upload */}
+        {/* 🎥 Video Upload - REPLACE entire div */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
             Workout Video
@@ -227,9 +277,12 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
               Upload video file or{" "}
               <span className="text-green-600 font-semibold">browse</span>
             </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Supports: MP4, WEBM, OGG, MOV (Max 200MB)
+            </p>
             <input
               type="file"
-              accept="video/*"
+              accept={ACCEPTED_VIDEO_TYPES}
               onChange={handleVideoChange}
               className="absolute inset-0 opacity-0 cursor-pointer"
             />
@@ -275,7 +328,11 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           </label>
           <select
             name="tier"
-            value={typeof planData.tier === "string" ? planData.tier : (planData.tier as ITier)?._id || ""}
+            value={
+              typeof planData.tier === "string"
+                ? planData.tier
+                : (planData.tier as ITier)?._id || ""
+            }
             onChange={handleInputChange}
             className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
           >
@@ -371,6 +428,23 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           )}
         </div>
 
+        {/* 📋 Workout Position */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Workout Position
+          </label>
+          <div className="flex gap-2 mb-3">
+            <input
+              type="number"
+              value={planData.sortingPosition || ""}
+              name="sortingPosition"
+              onChange={handleInputChange}
+              placeholder="Add workout position..."
+              className="flex-1 border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+            />
+          </div>
+        </div>
+
         {/* 🔘 Buttons */}
         <div className="flex gap-3 pt-4">
           <Button
@@ -382,6 +456,7 @@ const EditWorkoutModal: React.FC<EditWorkoutModalProps> = ({
           <Button
             loading={isUpdating}
             onClick={handleSubmit}
+            disabled={isConverting}
             className="flex-1 !bg-green-600 !text-white !py-3 !px-4 rounded-lg hover:!bg-green-700 font-medium shadow-sm hover:shadow-md transition-all"
           >
             Update Workout

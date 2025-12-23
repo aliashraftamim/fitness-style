@@ -26,6 +26,7 @@ export type TFormData = {
   tier: string;
   workoutType: string;
   workoutPlan: string[];
+  sortingPosition: number;
   isCompleted?: boolean;
 };
 
@@ -45,4 +46,5 @@ export const initialFormData: TFormData = {
   tier: "",
   workoutType: "Beginner",
   workoutPlan: [],
+  sortingPosition: 0,
 };
