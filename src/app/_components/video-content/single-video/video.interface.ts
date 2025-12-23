@@ -5,6 +5,7 @@ export interface IVideo {
   subtitle: string;
   description: string;
   parentContent: string;
+  sortingPosition: number;
   createdAt?: Date;
   updatedAt?: Date;
 }

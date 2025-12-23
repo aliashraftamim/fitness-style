@@ -65,6 +65,7 @@ const VideoForm: React.FC<VideoFormProps> = ({
         subtitle: formData.subtitle,
         description: formData.description,
         parentContent: parentContentId,
+        sortingPosition: Number(formData.sortingPosition),
       };
       formDataToSend.append("data", JSON.stringify(dataObject));
 
@@ -157,6 +158,21 @@ const VideoForm: React.FC<VideoFormProps> = ({
             onChange={handleChange}
             placeholder="Enter subtitle"
             className="w-full border border-gray-300 rounded-lg px-4 py-2"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Content Position
+          </label>
+          <input
+            type="number"
+            name="sortingPosition"
+            value={formData?.sortingPosition}
+            onChange={handleChange}
+            placeholder="Enter Position"
+            className="w-full border border-gray-300 rounded-lg px-4 py-2"
+            required
           />
         </div>
 
