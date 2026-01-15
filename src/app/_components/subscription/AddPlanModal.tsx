@@ -2,6 +2,7 @@
 
 import { useCreateSubscriptionMutation } from "@/redux/features/admin/subscription.api";
 import { useGetAllTiersQuery } from "@/redux/features/admin/tiers.api";
+import { Button } from "antd";
 import React, { useState } from "react";
 import { FaCheck, FaLayerGroup, FaPlus } from "react-icons/fa6";
 import { toast } from "sonner";
@@ -19,7 +20,8 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
   onClose,
   onAdd,
 }) => {
-  const [addPlan] = useCreateSubscriptionMutation();
+  const [addPlan, { isLoading: isLoadingForCreatePlan }] =
+    useCreateSubscriptionMutation();
   const { data: tiersData, isLoading: isLoadingTiers } = useGetAllTiersQuery(
     {}
   );
@@ -27,6 +29,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [appleProductId, setAppleProductId] = useState("");
   const [price, setPrice] = useState(0);
   const [discount, setDiscount] = useState<number | null>(null);
   const [currency, setCurrency] = useState<"USD" | "INR" | "EUR">("USD");
@@ -64,6 +67,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
 
     const newPlan: Omit<ISubscription, "_id"> = {
       title,
+      appleProductId,
       description,
       pricePerMonth: price,
       discountPricePerMonth: discount,
@@ -80,6 +84,7 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
 
       // Reset fields
       setTitle("");
+      setAppleProductId("");
       setDescription("");
       setPrice(0);
       setDiscount(null);
@@ -130,16 +135,30 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
                 </label>
                 <select
                   value={currency}
-                  onChange={(e) =>
-                    setCurrency(e.target.value as "USD" | "INR" | "EUR")
+                  onChange={
+                    (e) => setCurrency(e.target.value as "USD") // "USD" | "INR" | "EUR"
                   }
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all bg-white"
                 >
                   <option value="USD">USD</option>
-                  <option value="INR">INR</option>
-                  <option value="EUR">EUR</option>
+                  {/* <option value="INR">INR</option>
+                  <option value="EUR">EUR</option> */}
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Apple Product Id *
+              </label>
+              <input
+                type="text"
+                placeholder="Add Apple Product Id"
+                value={appleProductId}
+                onChange={(e) => setAppleProductId(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all resize-none"
+                required
+              />
             </div>
 
             <div>
@@ -163,8 +182,8 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
                 </label>
                 <input
                   type="number"
-                  placeholder="0"
-                  value={price}
+                  placeholder="100$"
+                  value={price ?? ""}
                   onChange={(e) => setPrice(Number(e.target.value))}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all"
                   required
@@ -348,20 +367,21 @@ const AddPlanModal: React.FC<AddPlanModalProps> = ({
 
         {/* Fixed Footer */}
         <div className="px-6 py-4 border-t border-gray-200 flex gap-3 flex-shrink-0">
-          <button
-            type="button"
+          <Button
+            htmlType="button"
             onClick={onClose}
-            className="flex-1 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors"
+            className="!flex-1 !py-2 !border border-gray-300 !hover:bg-gray-50 !text-gray-700 !text-sm !font-semibold !rounded-lg !transition-colors"
           >
             Cancel
-          </button>
-          <button
-            type="submit"
+          </Button>
+          <Button
+            htmlType="submit"
             onClick={handleSubmit}
-            className="flex-1 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-md"
+            loading={isLoadingForCreatePlan}
+            className="!flex-1 !py-2 !bg-gradient-to-r !from-emerald-600 !to-green-600 !hover:from-emerald-700 !hover:to-green-700 !text-white !text-sm !font-semibold !rounded-lg !transition-colors !shadow-md"
           >
             Add Plan
-          </button>
+          </Button>
         </div>
       </div>
     </DynamicModal>

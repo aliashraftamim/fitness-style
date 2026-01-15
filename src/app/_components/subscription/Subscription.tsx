@@ -18,6 +18,7 @@ import type { ISubscription } from "./subscription.interface";
 
 const formatSubscription = (raw: any): ISubscription => ({
   _id: raw._id || raw.id, // Handle both _id and id
+  appleProductId: raw.appleProductId,
   title: raw.title,
   description: raw.description,
   pricePerMonth: raw.pricePerMonth,
@@ -303,6 +304,9 @@ export default function Subscription() {
                       <h2 className="text-2xl md:text-3xl font-bold text-slate-800 mb-2">
                         {plan?.title}
                       </h2>
+                      <p className="text-slate-600 leading-relaxed">
+                        Apple Product ID: {plan?.appleProductId || "N/A"}
+                      </p>
                       <p className="text-slate-600 leading-relaxed">
                         {plan?.description}
                       </p>
