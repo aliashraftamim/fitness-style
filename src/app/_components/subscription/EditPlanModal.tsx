@@ -2,6 +2,7 @@
 
 import { useUpdateSubscriptionMutation } from "@/redux/features/admin/subscription.api";
 import { useGetAllTiersQuery } from "@/redux/features/admin/tiers.api";
+import { Button } from "antd";
 import React, { useEffect, useState } from "react";
 import { FaCheck, FaLayerGroup, FaPlus } from "react-icons/fa6";
 import { toast } from "sonner";
@@ -21,13 +22,15 @@ const EditPlanModal: React.FC<EditPlanModalProps> = ({
   plan,
   onSave,
 }) => {
-  const [update] = useUpdateSubscriptionMutation();
+  const [update, { isLoading: isLoadingForUpdatePlan }] =
+    useUpdateSubscriptionMutation();
   const { data: tiersData, isLoading: isLoadingTiers } = useGetAllTiersQuery(
     {}
   );
   const tiers = tiersData?.data || [];
 
   const [title, setTitle] = useState("");
+  const [appleProductId, setAppleProductId] = useState("");
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState(0);
   const [discount, setDiscount] = useState<number | null>(null);
@@ -40,6 +43,7 @@ const EditPlanModal: React.FC<EditPlanModalProps> = ({
   useEffect(() => {
     if (plan) {
       setTitle(plan.title);
+      setAppleProductId(plan.appleProductId);
       setDescription(plan.description);
       setPrice(plan.pricePerMonth);
       setDiscount(plan.discountPricePerMonth ?? null);
@@ -80,6 +84,7 @@ const EditPlanModal: React.FC<EditPlanModalProps> = ({
 
     const updatedPlan: Omit<ISubscription, "_id"> = {
       title,
+      appleProductId: appleProductId || plan.appleProductId,
       description,
       pricePerMonth: price,
       discountPricePerMonth: discount,
@@ -150,6 +155,20 @@ const EditPlanModal: React.FC<EditPlanModalProps> = ({
                   <option value="EUR">EUR</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Apple Product Id *
+              </label>
+              <input
+                type="text"
+                placeholder="Add Apple Product Id"
+                value={appleProductId}
+                onChange={(e) => setAppleProductId(e.target.value)}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 outline-none transition-all resize-none"
+                required
+              />
             </div>
 
             <div>
@@ -358,20 +377,21 @@ const EditPlanModal: React.FC<EditPlanModalProps> = ({
 
         {/* Fixed Footer */}
         <div className="px-6 py-4 border-t border-gray-200 flex gap-3 flex-shrink-0">
-          <button
-            type="button"
+          <Button
+            htmlType="button"
             onClick={onClose}
-            className="flex-1 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 text-sm font-semibold rounded-lg transition-colors"
+            className="!flex-1 !py-2 !border border-gray-300 !hover:bg-gray-50 !text-gray-700 !text-sm !font-semibold !rounded-lg !transition-colors"
           >
             Cancel
-          </button>
-          <button
-            type="submit"
+          </Button>
+          <Button
+            htmlType="submit"
             onClick={handleSubmit}
-            className="flex-1 py-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-md"
+            loading={isLoadingForUpdatePlan}
+            className="!flex-1 !py-2 !bg-gradient-to-r !from-emerald-600 !to-green-600 !hover:from-emerald-700 !hover:to-green-700 !text-white !text-sm !font-semibold !rounded-lg !transition-colors !shadow-md"
           >
             Save Changes
-          </button>
+          </Button>
         </div>
       </div>
     </DynamicModal>

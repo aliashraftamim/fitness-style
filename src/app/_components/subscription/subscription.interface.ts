@@ -2,6 +2,7 @@ import { ITier } from "../Tiers/tiers.interface";
 
 export interface ISubscription {
   _id?: string; // MongoDB document ID
+  appleProductId: string;
   title: string;
   tires: string[] | ITier[] | any; // Array of Tier IDs
   description: string;
